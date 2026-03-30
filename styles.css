@@ -475,7 +475,7 @@ footer { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid va
 .r.in { opacity: 1; transform: none; }
 
 /* COMING SOON */
-.dl-soon { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+.dl-soon { opacity: 0.45; cursor: not-allowed; }
 .soon-badge {
   display: inline-flex; align-items: center; gap: 0.35rem;
   padding: 0.2rem 0.6rem;
