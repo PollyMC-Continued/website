@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PollyMC-Continued</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">PollyMC<em>-Continued</em></span>
+  <div class="nav-center">
+    <a href="#features">Features</a>
+    <a href="#download">Download</a>
+    <a href="#changelog">Changelog</a>
+    <a href="#faq">FAQ</a>
+    <a href="#about">About</a>
+  </div>
+  <div class="nav-right">
+    <a href="https://github.com" target="_blank"><i class="fa-brands fa-github"></i> GitHub</a>
+  </div>
+  <button class="nav-hamburger" id="hamburger" aria-label="Menu">
+    <i class="fa-solid fa-bars" id="hamburger-icon"></i>
+  </button>
+</nav>
+
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#features" class="mobile-link"><i class="fa-solid fa-circle-nodes"></i> Features</a>
+  <a href="#download" class="mobile-link"><i class="fa-solid fa-download"></i> Download</a>
+  <a href="#changelog" class="mobile-link"><i class="fa-solid fa-code-commit"></i> Changelog</a>
+  <a href="#faq" class="mobile-link"><i class="fa-solid fa-circle-question"></i> FAQ</a>
+  <a href="#about" class="mobile-link"><i class="fa-solid fa-users"></i> About</a>
+  <a href="https://github.com" target="_blank" class="mobile-link"><i class="fa-brands fa-github"></i> GitHub</a>
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-main">
+    <div class="hero-left">
+      <div>
+        <div class="hero-eyebrow"><span class="dot"></span> Revival Release — v9.0.0</div>
+        <h1>POLLY<br>MC<br><span class="stroke">CON</span><span class="accent">TINUED</span></h1>
+        <p class="hero-desc">
+          The community revival of PollyMC. A free, open-source Minecraft launcher —
+          no Microsoft account, no DRM, no compromise.
+        </p>
+      </div>
+      <div class="hero-cta">
+        <a href="#download" class="btn btn-fill"><i class="fa-solid fa-download"></i> Download v9.0.0</a>
+        <a href="https://github.com" target="_blank" class="btn btn-ghost"><i class="fa-brands fa-github"></i> Source Code</a>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="tbar-dot"></div><div class="tbar-dot"></div><div class="tbar-dot"></div>
+        </div>
+        <div class="terminal-body">
+          <span class="t-line"><span class="t-dim">$</span> <span class="t-green">./pollymc-continued</span> <span class="t-dim">--version</span></span>
+          <span class="t-line"><span class="t-white">PollyMC-Continued v9.0.0</span></span>
+          <span class="t-line t-dim">Revival Release · GPL-3.0</span>
+          <span class="t-line">&nbsp;</span>
+          <span class="t-line"><span class="t-dim">$</span> <span class="t-green">./pollymc-continued</span> <span class="t-dim">--features</span></span>
+          <span class="t-line"><span class="t-teal">✓</span> offline-mode <span class="t-dim">enabled</span></span>
+          <span class="t-line"><span class="t-teal">✓</span> authlib-injector <span class="t-dim">supported</span></span>
+          <span class="t-line"><span class="t-teal">✓</span> forge / fabric / quilt / neo</span>
+          <span class="t-line"><span class="t-teal">✓</span> modrinth / ftb / curseforge</span>
+          <span class="t-line"><span class="t-teal">✓</span> multi-instance <span class="t-dim">management</span></span>
+          <span class="t-line"><span class="t-teal">✓</span> drm <span class="t-dim">→</span> <span style="color:#f87171">none</span></span>
+          <span class="t-line">&nbsp;</span>
+          <span class="t-line"><span class="t-dim">$</span> <span class="cursor"></span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-strip">
+    <div class="strip-item"><span class="strip-label">Version</span><span class="strip-value green">v9.0.0</span></div>
+    <div class="strip-item"><span class="strip-label">Original by</span><span class="strip-value">fn2006</span></div>
+    <div class="strip-item"><span class="strip-label">Upstream</span><span class="strip-value">Prism</span></div>
+    <div class="strip-item"><span class="strip-label">License</span><span class="strip-value">GPL-3.0</span></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-head r">
+    <div class="section-num"><i class="fa-solid fa-circle-nodes"></i> 01 / Features</div>
+    <div class="section-title-wrap">
+      <div class="section-tag">What you get</div>
+      <h2>BUILT FOR FREEDOM</h2>
+    </div>
+  </div>
+  <div class="features-body">
+    <div class="feat r">
+      <div class="feat-icon"><i class="fa-solid fa-lock-open"></i></div>
+      <h3>No Microsoft Account</h3>
+      <p>Full offline play with no account checks on every launch. Your game, your terms.</p>
+    </div>
+    <div class="feat r">
+      <div class="feat-icon"><i class="fa-solid fa-server"></i></div>
+      <h3>Custom Auth Servers</h3>
+      <p>First-class authlib-injector support for private servers and alternative auth providers.</p>
+    </div>
+    <div class="feat r">
+      <div class="feat-icon"><i class="fa-solid fa-puzzle-piece"></i></div>
+      <h3>All Mod Loaders</h3>
+      <p>One-click install for Forge, Fabric, Quilt, NeoForge, and OptiFine — per instance.</p>
+    </div>
+    <div class="feat r">
+      <div class="feat-icon"><i class="fa-solid fa-layer-group"></i></div>
+      <h3>Multiple Instances</h3>
+      <p>Fully isolated installs — separate mods, configs, resource packs, and worlds.</p>
+    </div>
+    <div class="feat r">
+      <div class="feat-icon"><i class="fa-solid fa-boxes-stacked"></i></div>
+      <h3>Modpack Browser</h3>
+      <p>Browse and install packs from Modrinth, FTB, and CurseForge without leaving the launcher.</p>
+    </div>
+    <div class="feat r">
+      <div class="feat-icon"><i class="fa-brands fa-osi"></i></div>
+      <h3>Fully Open Source</h3>
+      <p>GPL-3.0 licensed. Every line auditable. No telemetry, no analytics, no surprises.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOADS -->
+<section class="section" id="download">
+  <div class="section-head r">
+    <div class="section-num"><i class="fa-solid fa-download"></i> 02 / Download</div>
+    <div class="section-title-wrap">
+      <div class="section-tag">Get the launcher</div>
+      <h2>PICK YOUR PLATFORM</h2>
+    </div>
+  </div>
+  <div class="dl-body">
+    <a href="https://github.com/PollyMC/PollyMC/releases/download/v9.0.0/PollyMC-Continued-Setup-v9.0.0.exe" class="dl-card r" download>
+      <i class="fa-brands fa-windows dl-os-icon"></i>
+      <div class="dl-os-name">Windows</div>
+      <div class="dl-filename">PollyMC-Continued-Setup-v9.0.0.exe</div>
+      <div class="dl-footer">
+        <span class="dl-size">x64 · Installer</span>
+        <i class="fa-solid fa-arrow-down dl-arrow"></i>
+      </div>
+    </a>
+    <a href="https://github.com/PollyMC/PollyMC/releases/download/v9.0.0/PollyMC-Continued-v9.0.0-x86_64.AppImage" class="dl-card r" download>
+      <i class="fa-brands fa-linux dl-os-icon"></i>
+      <div class="dl-os-name">Linux</div>
+      <div class="dl-filename">PollyMC-Continued-v9.0.0-x86_64.AppImage</div>
+      <div class="dl-footer">
+        <span class="dl-size">.AppImage · x86_64</span>
+        <i class="fa-solid fa-arrow-down dl-arrow"></i>
+      </div>
+    </a>
+    <div class="dl-card dl-soon r">
+      <i class="fa-brands fa-apple dl-os-icon"></i>
+      <div class="dl-os-name">macOS</div>
+      <div class="dl-filename" style="color:var(--dim)">Not yet available</div>
+      <div class="dl-footer">
+        <span class="dl-size" style="color:var(--dim)">Coming soon</span>
+        <span class="soon-badge"><i class="fa-solid fa-clock"></i> Soon</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CHANGELOG -->
+<section class="section" id="changelog">
+  <div class="section-head r">
+    <div class="section-num"><i class="fa-solid fa-code-commit"></i> 03 / Changelog</div>
+    <div class="section-title-wrap">
+      <div class="section-tag">Release notes</div>
+      <h2>WHAT'S NEW</h2>
+    </div>
+  </div>
+  <div class="changelog-body r">
+    <div class="cl-sidebar">
+      <div class="cl-version">v9.0.0</div>
+      <div class="cl-date">Revival Release · 2025</div>
+      <span class="cl-tag">Community Build</span>
+    </div>
+    <div class="cl-content">
+      <div class="cl-group">
+        <div class="cl-group-head new"><i class="fa-solid fa-sparkles"></i> New</div>
+        <ul>
+          <li>Project revived as PollyMC-Continued by the community</li>
+          <li>Updated to latest Prism Launcher upstream codebase</li>
+          <li>NeoForge mod loader support added</li>
+          <li>Improved Modrinth modpack browser with search and filtering</li>
+          <li>New offline account manager for streamlined local setup</li>
+        </ul>
+      </div>
+      <div class="cl-group">
+        <div class="cl-group-head improved"><i class="fa-solid fa-arrow-trend-up"></i> Improved</div>
+        <ul>
+          <li>Faster instance loading and launch times across all platforms</li>
+          <li>Better Java auto-detection — supports JDK 8 through 21</li>
+          <li>Improved authlib-injector integration stability</li>
+          <li>Cleaner instance settings UI and layout</li>
+        </ul>
+      </div>
+      <div class="cl-group">
+        <div class="cl-group-head fixed"><i class="fa-solid fa-wrench"></i> Fixed</div>
+        <ul>
+          <li>Crash on macOS Sonoma with certain GPU configurations</li>
+          <li>FTB modpack download failures on slow connections</li>
+          <li>Mojang account login edge cases</li>
+          <li>Several memory leaks in the instance manager</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="section-head r">
+    <div class="section-num"><i class="fa-solid fa-circle-question"></i> 04 / FAQ</div>
+    <div class="section-title-wrap">
+      <div class="section-tag">Common questions</div>
+      <h2>FREQUENTLY ASKED</h2>
+    </div>
+  </div>
+  <div class="faq-body r">
+    <div class="faq-col">
+      <details>
+        <summary>Is this safe to use? <span class="sq"><i class="fa-solid fa-plus"></i></span></summary>
+        <div class="faq-answer">Yes. PollyMC-Continued is fully open source under GPL-3.0. Every line of code is readable on GitHub. No telemetry, no tracking, no hidden processes of any kind.</div>
+      </details>
+      <details>
+        <summary>Do I need a Microsoft account? <span class="sq"><i class="fa-solid fa-plus"></i></span></summary>
+        <div class="faq-answer">No. Offline play requires no account at all. You can also authenticate with a legacy Mojang account, though online-mode servers won't accept it.</div>
+      </details>
+      <details>
+        <summary>Can I join online servers? <span class="sq"><i class="fa-solid fa-plus"></i></span></summary>
+        <div class="faq-answer">Only with a valid Microsoft account. Offline accounts work on servers with online-mode disabled, or private servers running custom auth via authlib-injector.</div>
+      </details>
+    </div>
+    <div class="faq-col">
+      <details>
+        <summary>What's different from the original PollyMC? <span class="sq"><i class="fa-solid fa-plus"></i></span></summary>
+        <div class="faq-answer">PollyMC-Continued starts from v9.0.0 onward. It syncs the upstream base, adds NeoForge support, and commits to long-term community maintenance.</div>
+      </details>
+      <details>
+        <summary>Is this affiliated with Prism or PolyMC? <span class="sq"><i class="fa-solid fa-plus"></i></span></summary>
+        <div class="faq-answer">No. This is an independent community project. It uses Prism Launcher as an upstream base but is not endorsed by or affiliated with either project.</div>
+      </details>
+      <details>
+        <summary>How do I contribute? <span class="sq"><i class="fa-solid fa-plus"></i></span></summary>
+        <div class="faq-answer">Open an issue or pull request on GitHub. All contributions welcome — code, translations, documentation, and bug reports.</div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- CREDITS -->
+<section class="section" id="about">
+  <div class="section-head r">
+    <div class="section-num"><i class="fa-solid fa-users"></i> 05 / About</div>
+    <div class="section-title-wrap">
+      <div class="section-tag">Credits</div>
+      <h2>WHO MADE THIS</h2>
+    </div>
+  </div>
+  <div class="credits-body r">
+    <div class="credit">
+      <div class="credit-icon"><i class="fa-solid fa-star"></i></div>
+      <div class="credit-name">fn2006</div>
+      <div class="credit-role">Original Creator</div>
+      <div class="credit-desc">Created PollyMC, the project this launcher revives and continues.</div>
+    </div>
+    <div class="credit">
+      <div class="credit-icon"><i class="fa-solid fa-people-group"></i></div>
+      <div class="credit-name">Community</div>
+      <div class="credit-role">PollyMC-Continued</div>
+      <div class="credit-desc">The contributors who revived and maintain this project.</div>
+    </div>
+    <div class="credit">
+      <div class="credit-icon"><i class="fa-solid fa-code-branch"></i></div>
+      <div class="credit-name">Prism Launcher</div>
+      <div class="credit-role">Upstream Base</div>
+      <div class="credit-desc">The open source launcher this project forks from.</div>
+    </div>
+    <div class="credit">
+      <div class="credit-icon"><i class="fa-solid fa-landmark"></i></div>
+      <div class="credit-name">PolyMC</div>
+      <div class="credit-role">Prior Art</div>
+      <div class="credit-desc">The launcher PollyMC originally forked from.</div>
+    </div>
+  </div>
+  <div class="disclaimer">
+    <i class="fa-solid fa-circle-info" style="margin-right:0.5rem;"></i>
+    PollyMC-Continued is not affiliated with Mojang Studios, Microsoft, PolyMC, or Prism Launcher.
+    Minecraft is a trademark of Mojang Studios. Provided as-is under the GPL-3.0 license.
+  </div>
+</section>
+
+<footer>
+  <div class="footer-left">
+    <div class="footer-logo">PollyMC<em>-Continued</em></div>
+    <div class="footer-copy">v9.0.0 · GPL-3.0 · Community Project</div>
+  </div>
+  <div class="footer-right">
+    <a href="https://github.com" target="_blank"><i class="fa-brands fa-github"></i> GitHub</a>
+    <a href="#download"><i class="fa-solid fa-download"></i> Download</a>
+    <a href="#faq"><i class="fa-solid fa-circle-question"></i> FAQ</a>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
