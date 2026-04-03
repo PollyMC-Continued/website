@@ -30,38 +30,40 @@ document.querySelectorAll('.mobile-link').forEach(a => {
   });
 });
 
-// ─── Visitor Counter (1 count per unique browser, using countapi.dev) ────────
+// ─── Visitor Counter (1 count per unique browser, using counterapi CDN) ───────
 (async () => {
-  const COUNT_KEY  = 'pollymc_visited';       // localStorage flag
-  const NAMESPACE  = 'pollymc-continued';     // countapi namespace
-  const KEY        = 'visitors';              // countapi key
-  const el         = document.getElementById('visitor-count');
+  const COUNT_KEY = 'pollymc_visited';
+  const WORKSPACE = 'pollymc-continued';
+  const COUNTER   = 'visitors';
+  const el        = document.getElementById('visitor-count');
   if (!el) return;
 
   const fmt = n => n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K' : String(n);
+  const setCount = n => { el.innerHTML = fmt(n); el.classList.add('visitor-count-in'); };
 
-  const setCount = n => {
-    el.innerHTML = fmt(n);
-    el.classList.add('visitor-count-in');
-  };
+  // Dynamically load the counterapi browser library
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/counterapi/dist/counter.browser.min.js';
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
 
   try {
+    const client = new Counter({ workspace: WORKSPACE });
     const alreadyCounted = localStorage.getItem(COUNT_KEY);
 
-    let data;
+    let result;
     if (alreadyCounted) {
-      // Just read the current count — don't increment again
-      const res = await fetch(`https://api.counterapi.dev/v2/${NAMESPACE}/${KEY}`);
-      data = await res.json();
+      result = await client.get(COUNTER);
     } else {
-      // First visit from this browser — increment
-      const res = await fetch(`https://api.counterapi.dev/v2/${NAMESPACE}/${KEY}/up`);
-      data = await res.json();
+      result = await client.up(COUNTER);
       localStorage.setItem(COUNT_KEY, '1');
     }
 
-    if (typeof data.count === 'number') {
-      setCount(data.count);
+    if (typeof result.value === 'number') {
+      setCount(result.value);
     } else {
       el.innerHTML = 'N/A';
     }
