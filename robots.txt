@@ -1,0 +1,9 @@
+# robots.txt — PollyMC-Continued
+# https://pollymc.vercel.app/
+
+# Allow all crawlers full access
+User-agent: *
+Allow: /
+
+# Point crawlers to the sitemap
+Sitemap: https://pollymc.vercel.app/sitemap.xml
