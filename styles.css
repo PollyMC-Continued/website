@@ -308,6 +308,14 @@ h2 {
 }
 
 /* DOWNLOADS */
+.dl-controls { display: flex; justify-content: center; margin-bottom: 1.5rem; }
+.dl-controls select {
+  background: var(--panel); color: var(--white); border: 1px solid var(--line);
+  padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer;
+  outline: none; min-width: 200px; text-align: center;
+}
+.dl-controls select:hover { border-color: var(--green); }
+/* DOWNLOADS */
 .dl-body { display: grid; grid-template-columns: repeat(3, 1fr); }
 .dl-card {
   padding: 2.5rem 2rem;

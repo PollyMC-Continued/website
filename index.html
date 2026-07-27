@@ -163,6 +163,11 @@
       <h2>PICK YOUR PLATFORM</h2>
     </div>
   </div>
+  <div class="dl-controls">
+    <select id="dl-version-select">
+      <option>Loading versions...</option>
+    </select>
+  </div>
   <div class="dl-body">
     <a id="dl-win" class="dl-card r">
       <i class="fa-brands fa-windows dl-os-icon"></i>
@@ -350,11 +355,17 @@
 
 <script src="app.js"></script>
 <script>
+  let allReleases = [];
+
   function setDownloadCard(id, asset) {
     const card = document.getElementById(id);
     const file = document.getElementById(id + '-filename');
     const arrow = document.getElementById(id + '-arrow');
     const badge = document.getElementById(id + '-badge');
+
+    card.classList.remove('wip');
+    if (arrow) arrow.style.display = '';
+    if (badge) badge.style.display = 'none';
 
     if (asset) {
       card.href = asset.browser_download_url;
@@ -367,31 +378,49 @@
     }
   }
 
-  async function fetchLatestRelease() {
+  function updateCards(release) {
+    const tagName = release.tag_name || 'v0.0.0';
+    document.querySelectorAll('.app-version').forEach(el => {
+      el.textContent = tagName;
+    });
+
+    const winAsset = release.assets.find(a => a.name.toLowerCase().includes('setup') && a.name.endsWith('.exe'));
+    const linuxAsset = release.assets.find(a => a.name.endsWith('.AppImage'));
+    const macAsset = release.assets.find(a => a.name.includes('macOS') && a.name.endsWith('.dmg'));
+
+    setDownloadCard('dl-win', winAsset);
+    setDownloadCard('dl-linux', linuxAsset);
+    setDownloadCard('dl-mac', macAsset);
+  }
+
+  async function fetchReleases() {
     try {
-      const response = await fetch('https://api.github.com/repos/corecommit/PollyMC-Continued/releases/latest');
+      const response = await fetch('https://api.github.com/repos/corecommit/PollyMC-Continued/releases?per_page=10');
       if (!response.ok) return;
-      
-      const data = await response.json();
-      const tagName = data.tag_name || 'v9.0.0';
-      
-      document.querySelectorAll('.app-version').forEach(el => {
-        el.textContent = tagName;
+
+      allReleases = await response.json();
+      if (!allReleases.length) return;
+
+      const sel = document.getElementById('dl-version-select');
+      sel.innerHTML = '';
+      allReleases.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.tag_name;
+        opt.textContent = r.tag_name;
+        sel.appendChild(opt);
       });
 
-      const winAsset = data.assets.find(a => a.name.toLowerCase().includes('setup') && a.name.endsWith('.exe'));
-      const linuxAsset = data.assets.find(a => a.name.endsWith('.AppImage'));
-      const macAsset = data.assets.find(a => a.name.includes('macOS') && a.name.endsWith('.dmg'));
+      sel.onchange = () => {
+        const r = allReleases.find(x => x.tag_name === sel.value);
+        if (r) updateCards(r);
+      };
 
-      setDownloadCard('dl-win', winAsset);
-      setDownloadCard('dl-linux', linuxAsset);
-      setDownloadCard('dl-mac', macAsset);
-      
+      updateCards(allReleases[0]);
     } catch (error) {
-      console.error('Error fetching latest release:', error);
+      console.error('Error fetching releases:', error);
     }
   }
-  fetchLatestRelease();
+  fetchReleases();
 </script>
 </body>
 </html>
