@@ -378,7 +378,24 @@
 <script src="app.js"></script>
 <script>
   let allReleases = [];
-  const DROPDOWN_IDS = ['dl-win-ver', 'dl-linux-ver', 'dl-mac-ver'];
+  /* Per-platform config: each platform has its own asset matcher */
+  const PLATFORM_CONFIG = [
+    {
+      dropdownId: 'dl-win-ver',
+      cardId:     'dl-win',
+      match:      r => r.assets.find(a => a.name.toLowerCase().includes('setup') && a.name.endsWith('.exe')),
+    },
+    {
+      dropdownId: 'dl-linux-ver',
+      cardId:     'dl-linux',
+      match:      r => r.assets.find(a => a.name.endsWith('.AppImage')),
+    },
+    {
+      dropdownId: 'dl-mac-ver',
+      cardId:     'dl-mac',
+      match:      r => r.assets.find(a => a.name.includes('macOS') && a.name.endsWith('.dmg')),
+    },
+  ];
 
   /* ── Close all dropdowns when clicking outside ── */
   document.addEventListener('click', () => {
@@ -439,24 +456,7 @@
     }
   }
 
-  function updateCards(release) {
-    const tagName = release.tag_name || 'v0.0.0';
-    document.querySelectorAll('.app-version').forEach(el => {
-      el.textContent = tagName;
-    });
-    const winAsset   = release.assets.find(a => a.name.toLowerCase().includes('setup') && a.name.endsWith('.exe'));
-    const linuxAsset = release.assets.find(a => a.name.endsWith('.AppImage'));
-    const macAsset   = release.assets.find(a => a.name.includes('macOS') && a.name.endsWith('.dmg'));
-    setDownloadCard('dl-win',   winAsset);
-    setDownloadCard('dl-linux', linuxAsset);
-    setDownloadCard('dl-mac',   macAsset);
-  }
 
-  function selectVersion(tag) {
-    DROPDOWN_IDS.forEach(id => setDropdownValue(id, tag));
-    const r = allReleases.find(x => x.tag_name === tag);
-    if (r) updateCards(r);
-  }
 
   async function fetchReleases() {
     try {
@@ -466,13 +466,33 @@
       allReleases = await response.json();
       if (!allReleases.length) return;
 
-      DROPDOWN_IDS.forEach(id => {
-        const dd = document.getElementById(id);
+      /* Update global version badges with the newest release */
+      document.querySelectorAll('.app-version').forEach(el => {
+        el.textContent = allReleases[0].tag_name;
+      });
+
+      /* Build each platform's dropdown independently */
+      PLATFORM_CONFIG.forEach(({ dropdownId, cardId, match }) => {
+        const dd = document.getElementById(dropdownId);
         if (!dd) return;
+
+        /* Only include releases that have a real asset for THIS platform */
+        const available = allReleases.filter(r => match(r));
         const menu = dd.querySelector('.dl-dropdown-menu');
         menu.innerHTML = '';
-        allReleases.forEach(r => {
-          const item = document.createElement('div');
+
+        if (!available.length) {
+          const valueEl = dd.querySelector('.dl-dropdown-value');
+          const btn     = dd.querySelector('.dl-dropdown-btn');
+          if (valueEl) valueEl.textContent = 'No builds yet';
+          if (btn) btn.disabled = true;
+          setDownloadCard(cardId, null);
+          return;
+        }
+
+        available.forEach(r => {
+          const asset = match(r);
+          const item  = document.createElement('div');
           item.className = 'dl-dropdown-item';
           item.dataset.value = r.tag_name;
           item.setAttribute('role', 'option');
@@ -480,16 +500,21 @@
           item.textContent = r.tag_name;
           item.addEventListener('click', (e) => {
             e.stopPropagation();
-            selectVersion(r.tag_name);
+            setDropdownValue(dropdownId, r.tag_name);
+            setDownloadCard(cardId, asset);
             dd.classList.remove('open');
             dd.querySelector('.dl-dropdown-btn').setAttribute('aria-expanded', 'false');
           });
           menu.appendChild(item);
         });
-        initDropdown(id);
-      });
 
-      selectVersion(allReleases[0].tag_name);
+        initDropdown(dropdownId);
+
+        /* Auto-select the newest available version for this platform */
+        const first = available[0];
+        setDropdownValue(dropdownId, first.tag_name);
+        setDownloadCard(cardId, match(first));
+      });
     } catch (error) {
       console.error('Error fetching releases:', error);
     }
