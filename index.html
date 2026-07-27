@@ -168,7 +168,13 @@
       <i class="fa-brands fa-windows dl-os-icon"></i>
       <div class="dl-os-name">Windows</div>
       <div class="dl-filename" id="dl-win-filename">Fetching latest...</div>
-      <select class="dl-version-select" id="dl-win-ver"></select>
+      <div class="dl-dropdown" id="dl-win-ver">
+        <button class="dl-dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span class="dl-dropdown-value">Loading...</span>
+          <i class="fa-solid fa-chevron-down dl-dropdown-caret"></i>
+        </button>
+        <div class="dl-dropdown-menu" role="listbox"></div>
+      </div>
       <a id="dl-win" class="dl-card-link" download>
         <div class="dl-footer">
           <span class="dl-size">x64 · Installer</span>
@@ -181,7 +187,13 @@
       <i class="fa-brands fa-linux dl-os-icon"></i>
       <div class="dl-os-name">Linux</div>
       <div class="dl-filename" id="dl-linux-filename">Fetching latest...</div>
-      <select class="dl-version-select" id="dl-linux-ver"></select>
+      <div class="dl-dropdown" id="dl-linux-ver">
+        <button class="dl-dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span class="dl-dropdown-value">Loading...</span>
+          <i class="fa-solid fa-chevron-down dl-dropdown-caret"></i>
+        </button>
+        <div class="dl-dropdown-menu" role="listbox"></div>
+      </div>
       <a id="dl-linux" class="dl-card-link" download>
         <div class="dl-footer">
           <span class="dl-size">.AppImage · x86_64</span>
@@ -194,7 +206,13 @@
       <i class="fa-brands fa-apple dl-os-icon"></i>
       <div class="dl-os-name">macOS</div>
       <div class="dl-filename" id="dl-mac-filename">Fetching latest...</div>
-      <select class="dl-version-select" id="dl-mac-ver"></select>
+      <div class="dl-dropdown" id="dl-mac-ver">
+        <button class="dl-dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span class="dl-dropdown-value">Loading...</span>
+          <i class="fa-solid fa-chevron-down dl-dropdown-caret"></i>
+        </button>
+        <div class="dl-dropdown-menu" role="listbox"></div>
+      </div>
       <a id="dl-mac" class="dl-card-link" download>
         <div class="dl-footer">
           <span class="dl-size">Universal · DMG</span>
@@ -360,7 +378,45 @@
 <script src="app.js"></script>
 <script>
   let allReleases = [];
-  const SELECT_IDS = ['dl-win-ver', 'dl-linux-ver', 'dl-mac-ver'];
+  const DROPDOWN_IDS = ['dl-win-ver', 'dl-linux-ver', 'dl-mac-ver'];
+
+  /* ── Close all dropdowns when clicking outside ── */
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.dl-dropdown.open').forEach(d => {
+      d.classList.remove('open');
+      d.querySelector('.dl-dropdown-btn').setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  function initDropdown(id) {
+    const dd = document.getElementById(id);
+    if (!dd) return;
+    const btn = dd.querySelector('.dl-dropdown-btn');
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = dd.classList.contains('open');
+      /* Close all others first */
+      document.querySelectorAll('.dl-dropdown.open').forEach(d => {
+        d.classList.remove('open');
+        d.querySelector('.dl-dropdown-btn').setAttribute('aria-expanded', 'false');
+      });
+      if (!isOpen) {
+        dd.classList.add('open');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    });
+  }
+
+  function setDropdownValue(id, tag) {
+    const dd = document.getElementById(id);
+    if (!dd) return;
+    const valueEl = dd.querySelector('.dl-dropdown-value');
+    if (valueEl) valueEl.textContent = tag;
+    dd.querySelectorAll('.dl-dropdown-item').forEach(item => {
+      item.classList.toggle('selected', item.dataset.value === tag);
+      item.setAttribute('aria-selected', item.dataset.value === tag);
+    });
+  }
 
   function setDownloadCard(id, asset) {
     const card = document.getElementById(id);
@@ -388,18 +444,16 @@
     document.querySelectorAll('.app-version').forEach(el => {
       el.textContent = tagName;
     });
-
-    const winAsset = release.assets.find(a => a.name.toLowerCase().includes('setup') && a.name.endsWith('.exe'));
+    const winAsset   = release.assets.find(a => a.name.toLowerCase().includes('setup') && a.name.endsWith('.exe'));
     const linuxAsset = release.assets.find(a => a.name.endsWith('.AppImage'));
-    const macAsset = release.assets.find(a => a.name.includes('macOS') && a.name.endsWith('.dmg'));
-
-    setDownloadCard('dl-win', winAsset);
+    const macAsset   = release.assets.find(a => a.name.includes('macOS') && a.name.endsWith('.dmg'));
+    setDownloadCard('dl-win',   winAsset);
     setDownloadCard('dl-linux', linuxAsset);
-    setDownloadCard('dl-mac', macAsset);
+    setDownloadCard('dl-mac',   macAsset);
   }
 
   function selectVersion(tag) {
-    document.querySelectorAll('.dl-version-select').forEach(s => s.value = tag);
+    DROPDOWN_IDS.forEach(id => setDropdownValue(id, tag));
     const r = allReleases.find(x => x.tag_name === tag);
     if (r) updateCards(r);
   }
@@ -412,17 +466,27 @@
       allReleases = await response.json();
       if (!allReleases.length) return;
 
-      SELECT_IDS.forEach(id => {
-        const sel = document.getElementById(id);
-        if (!sel) return;
-        sel.innerHTML = '';
+      DROPDOWN_IDS.forEach(id => {
+        const dd = document.getElementById(id);
+        if (!dd) return;
+        const menu = dd.querySelector('.dl-dropdown-menu');
+        menu.innerHTML = '';
         allReleases.forEach(r => {
-          const opt = document.createElement('option');
-          opt.value = r.tag_name;
-          opt.textContent = r.tag_name;
-          sel.appendChild(opt);
+          const item = document.createElement('div');
+          item.className = 'dl-dropdown-item';
+          item.dataset.value = r.tag_name;
+          item.setAttribute('role', 'option');
+          item.setAttribute('aria-selected', 'false');
+          item.textContent = r.tag_name;
+          item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectVersion(r.tag_name);
+            dd.classList.remove('open');
+            dd.querySelector('.dl-dropdown-btn').setAttribute('aria-expanded', 'false');
+          });
+          menu.appendChild(item);
         });
-        sel.onchange = () => selectVersion(sel.value);
+        initDropdown(id);
       });
 
       selectVersion(allReleases[0].tag_name);
