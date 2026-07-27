@@ -344,6 +344,9 @@ h2 {
 }
 .dl-size { font-size: 0.7rem; color: var(--dim); letter-spacing: 0.06em; }
 .dl-arrow { font-size: 0.85rem; color: var(--muted); transition: color 0.15s; }
+.dl-badge { display: none; font-size: 0.7rem; color: var(--dim); letter-spacing: 0.06em; }
+.dl-badge i { margin-right: 0.3rem; }
+.dl-card.wip { opacity: 0.55; pointer-events: none; }
 
 /* CHANGELOG */
 .changelog-body { display: grid; grid-template-columns: 260px 1fr; }

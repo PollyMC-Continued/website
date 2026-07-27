@@ -164,31 +164,34 @@
     </div>
   </div>
   <div class="dl-body">
-    <a id="dl-win" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" class="dl-card r" download>
+    <a id="dl-win" class="dl-card r">
       <i class="fa-brands fa-windows dl-os-icon"></i>
       <div class="dl-os-name">Windows</div>
       <div class="dl-filename" id="dl-win-filename">Fetching latest...</div>
       <div class="dl-footer">
         <span class="dl-size">x64 · Installer</span>
-        <i class="fa-solid fa-arrow-down dl-arrow"></i>
+        <span class="dl-badge" id="dl-win-badge"><i class="fa-solid fa-hammer"></i> WIP</span>
+        <i class="fa-solid fa-arrow-down dl-arrow" id="dl-win-arrow"></i>
       </div>
     </a>
-    <a id="dl-linux" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" class="dl-card r" download>
+    <a id="dl-linux" class="dl-card r">
       <i class="fa-brands fa-linux dl-os-icon"></i>
       <div class="dl-os-name">Linux</div>
       <div class="dl-filename" id="dl-linux-filename">Fetching latest...</div>
       <div class="dl-footer">
         <span class="dl-size">.AppImage · x86_64</span>
-        <i class="fa-solid fa-arrow-down dl-arrow"></i>
+        <span class="dl-badge" id="dl-linux-badge"><i class="fa-solid fa-hammer"></i> WIP</span>
+        <i class="fa-solid fa-arrow-down dl-arrow" id="dl-linux-arrow"></i>
       </div>
     </a>
-    <a id="dl-mac" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" class="dl-card r" download>
+    <a id="dl-mac" class="dl-card r">
       <i class="fa-brands fa-apple dl-os-icon"></i>
       <div class="dl-os-name">macOS</div>
       <div class="dl-filename" id="dl-mac-filename">Fetching latest...</div>
       <div class="dl-footer">
         <span class="dl-size">Universal · DMG</span>
-        <i class="fa-solid fa-arrow-down dl-arrow"></i>
+        <span class="dl-badge" id="dl-mac-badge"><i class="fa-solid fa-hammer"></i> WIP</span>
+        <i class="fa-solid fa-arrow-down dl-arrow" id="dl-mac-arrow"></i>
       </div>
     </a>
   </div>
@@ -347,7 +350,23 @@
 
 <script src="app.js"></script>
 <script>
-  // Auto-fetch the latest release version and download links from GitHub
+  function setDownloadCard(id, asset) {
+    const card = document.getElementById(id);
+    const file = document.getElementById(id + '-filename');
+    const arrow = document.getElementById(id + '-arrow');
+    const badge = document.getElementById(id + '-badge');
+
+    if (asset) {
+      card.href = asset.browser_download_url;
+      file.textContent = asset.name;
+    } else {
+      card.classList.add('wip');
+      file.textContent = 'Work in progress';
+      if (arrow) arrow.style.display = 'none';
+      if (badge) badge.style.display = 'inline';
+    }
+  }
+
   async function fetchLatestRelease() {
     try {
       const response = await fetch('https://api.github.com/repos/corecommit/PollyMC-Continued/releases/latest');
@@ -356,37 +375,17 @@
       const data = await response.json();
       const tagName = data.tag_name || 'v9.0.0';
       
-      // 1. Update all text spans that have the "app-version" class
       document.querySelectorAll('.app-version').forEach(el => {
         el.textContent = tagName;
       });
 
-      // 2. Find the exact download URLs for each platform
       const winAsset = data.assets.find(a => a.name.toLowerCase().includes('setup') && a.name.endsWith('.exe'));
       const linuxAsset = data.assets.find(a => a.name.endsWith('.AppImage'));
       const macAsset = data.assets.find(a => a.name.includes('macOS') && a.name.endsWith('.dmg'));
 
-      // 3. Update the download buttons and file names
-      if (winAsset) {
-        const winBtn = document.getElementById('dl-win');
-        const winFile = document.getElementById('dl-win-filename');
-        if (winBtn) winBtn.href = winAsset.browser_download_url;
-        if (winFile) winFile.textContent = winAsset.name;
-      }
-
-      if (linuxAsset) {
-        const linuxBtn = document.getElementById('dl-linux');
-        const linuxFile = document.getElementById('dl-linux-filename');
-        if (linuxBtn) linuxBtn.href = linuxAsset.browser_download_url;
-        if (linuxFile) linuxFile.textContent = linuxAsset.name;
-      }
-
-      if (macAsset) {
-        const macBtn = document.getElementById('dl-mac');
-        const macFile = document.getElementById('dl-mac-filename');
-        if (macBtn) macBtn.href = macAsset.browser_download_url;
-        if (macFile) macFile.textContent = macAsset.name;
-      }
+      setDownloadCard('dl-win', winAsset);
+      setDownloadCard('dl-linux', linuxAsset);
+      setDownloadCard('dl-mac', macAsset);
       
     } catch (error) {
       console.error('Error fetching latest release:', error);
