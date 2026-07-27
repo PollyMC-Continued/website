@@ -182,15 +182,15 @@
         <i class="fa-solid fa-arrow-down dl-arrow"></i>
       </div>
     </a>
-    <div class="dl-card dl-soon r">
+    <a id="dl-mac" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" class="dl-card r" download>
       <i class="fa-brands fa-apple dl-os-icon"></i>
       <div class="dl-os-name">macOS</div>
-      <div class="dl-filename" style="color:var(--dim)">Not yet available</div>
+      <div class="dl-filename" id="dl-mac-filename">Fetching latest...</div>
       <div class="dl-footer">
-        <span class="dl-size" style="color:var(--dim)">Coming soon</span>
-        <span class="soon-badge"><i class="fa-solid fa-clock"></i> Soon</span>
+        <span class="dl-size">Universal · DMG</span>
+        <i class="fa-solid fa-arrow-down dl-arrow"></i>
       </div>
-    </div>
+    </a>
   </div>
 </section>
 
@@ -361,9 +361,10 @@
         el.textContent = tagName;
       });
 
-      // 2. Find the exact download URLs for Windows (.exe) and Linux (.AppImage)
+      // 2. Find the exact download URLs for each platform
       const winAsset = data.assets.find(a => a.name.toLowerCase().includes('setup') && a.name.endsWith('.exe'));
       const linuxAsset = data.assets.find(a => a.name.endsWith('.AppImage'));
+      const macAsset = data.assets.find(a => a.name.includes('macOS') && a.name.endsWith('.dmg'));
 
       // 3. Update the download buttons and file names
       if (winAsset) {
@@ -378,6 +379,13 @@
         const linuxFile = document.getElementById('dl-linux-filename');
         if (linuxBtn) linuxBtn.href = linuxAsset.browser_download_url;
         if (linuxFile) linuxFile.textContent = linuxAsset.name;
+      }
+
+      if (macAsset) {
+        const macBtn = document.getElementById('dl-mac');
+        const macFile = document.getElementById('dl-mac-filename');
+        if (macBtn) macBtn.href = macAsset.browser_download_url;
+        if (macFile) macFile.textContent = macAsset.name;
       }
       
     } catch (error) {
