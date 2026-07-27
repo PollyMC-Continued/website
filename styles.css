@@ -334,11 +334,29 @@ h2 {
 }
 .dl-filename { font-size: 0.72rem; color: var(--muted); margin-bottom: 0.5rem; word-break: break-all; }
 .dl-version-select {
-  background: var(--bg); color: var(--white); border: 1px solid var(--line);
-  padding: 0.4rem 0.6rem; border-radius: 4px; font-size: 0.78rem; cursor: pointer;
-  outline: none; margin-bottom: 1rem; width: 100%;
+  background: var(--dark);
+  color: var(--white);
+  border: 1px solid var(--line);
+  padding: 0.4rem 2rem 0.4rem 0.6rem;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+  cursor: pointer;
+  outline: none;
+  margin-bottom: 1rem;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555a65'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.dl-version-select option {
+  background: var(--dark);
+  color: var(--white);
 }
 .dl-version-select:hover { border-color: var(--green); }
+.dl-version-select:focus { border-color: var(--green); box-shadow: 0 0 0 2px rgba(168,255,120,0.12); }
 .dl-card-link { text-decoration: none; color: inherit; display: block; }
 .dl-footer {
   display: flex; align-items: center; justify-content: space-between;
