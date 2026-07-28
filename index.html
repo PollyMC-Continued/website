@@ -4,36 +4,29 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>PollyMC-Continued — Free Open-Source Minecraft Launcher</title>
-
-  <!-- Primary SEO -->
   <meta name="description" content="PollyMC-Continued is a free, open-source Minecraft launcher with no Microsoft account required. Supports offline play, custom auth servers, all mod loaders, and modpack browsers. GPL-3.0."/>
   <meta name="keywords" content="PollyMC, PollyMC-Continued, Minecraft launcher, open source, offline Minecraft, no Microsoft account, Forge, Fabric, Quilt, NeoForge, Modrinth, CurseForge, authlib-injector"/>
   <meta name="author" content="PollyMC-Continued Community"/>
   <meta name="robots" content="index, follow"/>
   <link rel="canonical" href="https://pollymc.vercel.app/"/>
-
-  <!-- Open Graph (Facebook, Discord, etc.) -->
   <meta property="og:type" content="website"/>
   <meta property="og:url" content="https://pollymc.vercel.app/"/>
   <meta property="og:title" content="PollyMC-Continued — Free Open-Source Minecraft Launcher"/>
   <meta property="og:description" content="The community revival of PollyMC. No Microsoft account. No DRM. No compromise. Supports Forge, Fabric, Quilt, NeoForge, Modrinth, FTB & CurseForge."/>
   <meta property="og:image" content="https://pollymc.vercel.app/logo.png"/>
   <meta property="og:site_name" content="PollyMC-Continued"/>
-
-  <!-- Twitter / X Card -->
   <meta name="twitter:card" content="summary_large_image"/>
   <meta name="twitter:title" content="PollyMC-Continued — Free Open-Source Minecraft Launcher"/>
   <meta name="twitter:description" content="The community revival of PollyMC. No Microsoft account. No DRM. No compromise."/>
   <meta name="twitter:image" content="https://pollymc.vercel.app/logo.png"/>
-
-  <!-- Theme -->
   <meta name="theme-color" content="#080909"/>
   <meta name="color-scheme" content="dark"/>
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  <link rel="stylesheet" href="styles.css"/>
   <link rel="icon" href="logo.png" type="image/png"/>
+  <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
 
@@ -47,9 +40,9 @@
     <a href="#about">About</a>
   </div>
   <div class="nav-right">
-    <a href="https://github.com/corecommit/PollyMC-Continued" target="_blank"><i class="fa-brands fa-github"></i> GitHub</a>
+    <a href="https://github.com/corecommit/PollyMC-Continued" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-github"></i> GitHub</a>
   </div>
-  <button class="nav-hamburger" id="hamburger" aria-label="Menu">
+  <button class="nav-hamburger" id="hamburger" aria-label="Toggle Menu" aria-expanded="false">
     <i class="fa-solid fa-bars" id="hamburger-icon"></i>
   </button>
 </nav>
@@ -60,10 +53,9 @@
   <a href="#changelog" class="mobile-link"><i class="fa-solid fa-code-commit"></i> Changelog</a>
   <a href="#faq" class="mobile-link"><i class="fa-solid fa-circle-question"></i> FAQ</a>
   <a href="#about" class="mobile-link"><i class="fa-solid fa-users"></i> About</a>
-  <a href="https://github.com/corecommit/PollyMC-Continued" target="_blank" class="mobile-link"><i class="fa-brands fa-github"></i> GitHub</a>
+  <a href="https://github.com/corecommit/PollyMC-Continued" target="_blank" rel="noopener noreferrer" class="mobile-link"><i class="fa-brands fa-github"></i> GitHub</a>
 </div>
 
-<!-- HERO -->
 <div class="hero">
   <div class="hero-main">
     <div class="hero-left">
@@ -77,7 +69,7 @@
       </div>
       <div class="hero-cta">
         <a href="#download" class="btn btn-fill"><i class="fa-solid fa-download"></i> Download <span class="app-version">v9.0.0</span></a>
-        <a href="https://github.com/corecommit/PollyMC-Continued" target="_blank" class="btn btn-ghost"><i class="fa-brands fa-github"></i> Source Code</a>
+        <a href="https://github.com/corecommit/PollyMC-Continued" target="_blank" rel="noopener noreferrer" class="btn btn-ghost"><i class="fa-brands fa-github"></i> Source Code</a>
       </div>
     </div>
     <div class="hero-right">
@@ -111,7 +103,6 @@
   </div>
 </div>
 
-<!-- FEATURES -->
 <section class="section" id="features">
   <div class="section-head r">
     <div class="section-num"><i class="fa-solid fa-circle-nodes"></i> 01 / Features</div>
@@ -154,7 +145,6 @@
   </div>
 </section>
 
-<!-- DOWNLOADS -->
 <section class="section" id="download">
   <div class="section-head r">
     <div class="section-num"><i class="fa-solid fa-download"></i> 02 / Download</div>
@@ -175,7 +165,7 @@
         </button>
         <div class="dl-dropdown-menu" role="listbox"></div>
       </div>
-      <a id="dl-win" class="dl-card-link" download>
+      <a id="dl-win" class="dl-card-link" href="https://github.com/corecommit/PollyMC-Continued/releases" target="_blank" rel="noopener noreferrer">
         <div class="dl-footer">
           <span class="dl-size">x64 · Installer</span>
           <span class="dl-badge" id="dl-win-badge"><i class="fa-solid fa-hammer"></i> WIP</span>
@@ -194,7 +184,7 @@
         </button>
         <div class="dl-dropdown-menu" role="listbox"></div>
       </div>
-      <a id="dl-linux" class="dl-card-link" download>
+      <a id="dl-linux" class="dl-card-link" href="https://github.com/corecommit/PollyMC-Continued/releases" target="_blank" rel="noopener noreferrer">
         <div class="dl-footer">
           <span class="dl-size">.AppImage · x86_64</span>
           <span class="dl-badge" id="dl-linux-badge"><i class="fa-solid fa-hammer"></i> WIP</span>
@@ -213,7 +203,7 @@
         </button>
         <div class="dl-dropdown-menu" role="listbox"></div>
       </div>
-      <a id="dl-mac" class="dl-card-link" download>
+      <a id="dl-mac" class="dl-card-link" href="https://github.com/corecommit/PollyMC-Continued/releases" target="_blank" rel="noopener noreferrer">
         <div class="dl-footer">
           <span class="dl-size">Universal · DMG</span>
           <span class="dl-badge" id="dl-mac-badge"><i class="fa-solid fa-hammer"></i> WIP</span>
@@ -224,7 +214,6 @@
   </div>
 </section>
 
-<!-- CHANGELOG -->
 <section class="section" id="changelog">
   <div class="section-head r">
     <div class="section-num"><i class="fa-solid fa-code-commit"></i> 03 / Changelog</div>
@@ -280,7 +269,6 @@
   </div>
 </section>
 
-<!-- FAQ -->
 <section class="section" id="faq">
   <div class="section-head r">
     <div class="section-num"><i class="fa-solid fa-circle-question"></i> 04 / FAQ</div>
@@ -321,7 +309,6 @@
   </div>
 </section>
 
-<!-- CREDITS -->
 <section class="section" id="about">
   <div class="section-head r">
     <div class="section-num"><i class="fa-solid fa-users"></i> 05 / About</div>
@@ -369,157 +356,11 @@
     <div class="footer-copy"><span class="app-version">v9.0.0</span> · GPL-3.0 · Community Project</div>
   </div>
   <div class="footer-right">
-    <a href="https://github.com/corecommit/PollyMC-Continued" target="_blank"><i class="fa-brands fa-github"></i> GitHub</a>
+    <a href="https://github.com/corecommit/PollyMC-Continued" target="_blank" rel="noopener noreferrer"><i class="fa-brands fa-github"></i> GitHub</a>
     <a href="#download"><i class="fa-solid fa-download"></i> Download</a>
     <a href="#faq"><i class="fa-solid fa-circle-question"></i> FAQ</a>
   </div>
 </footer>
-
 <script src="app.js"></script>
-<script>
-  let allReleases = [];
-  /* Per-platform config: each platform has its own asset matcher */
-  const PLATFORM_CONFIG = [
-    {
-      dropdownId: 'dl-win-ver',
-      cardId:     'dl-win',
-      match:      r => r.assets.find(a => a.name.toLowerCase().includes('setup') && a.name.endsWith('.exe')),
-    },
-    {
-      dropdownId: 'dl-linux-ver',
-      cardId:     'dl-linux',
-      match:      r => r.assets.find(a => a.name.endsWith('.AppImage')),
-    },
-    {
-      dropdownId: 'dl-mac-ver',
-      cardId:     'dl-mac',
-      match:      r => r.assets.find(a => a.name.includes('macOS') && a.name.endsWith('.dmg')),
-    },
-  ];
-
-  /* ── Close all dropdowns when clicking outside ── */
-  document.addEventListener('click', () => {
-    document.querySelectorAll('.dl-dropdown.open').forEach(d => {
-      d.classList.remove('open');
-      d.querySelector('.dl-dropdown-btn').setAttribute('aria-expanded', 'false');
-    });
-  });
-
-  function initDropdown(id) {
-    const dd = document.getElementById(id);
-    if (!dd) return;
-    const btn = dd.querySelector('.dl-dropdown-btn');
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isOpen = dd.classList.contains('open');
-      /* Close all others first */
-      document.querySelectorAll('.dl-dropdown.open').forEach(d => {
-        d.classList.remove('open');
-        d.querySelector('.dl-dropdown-btn').setAttribute('aria-expanded', 'false');
-      });
-      if (!isOpen) {
-        dd.classList.add('open');
-        btn.setAttribute('aria-expanded', 'true');
-      }
-    });
-  }
-
-  function setDropdownValue(id, tag) {
-    const dd = document.getElementById(id);
-    if (!dd) return;
-    const valueEl = dd.querySelector('.dl-dropdown-value');
-    if (valueEl) valueEl.textContent = tag;
-    dd.querySelectorAll('.dl-dropdown-item').forEach(item => {
-      item.classList.toggle('selected', item.dataset.value === tag);
-      item.setAttribute('aria-selected', item.dataset.value === tag);
-    });
-  }
-
-  function setDownloadCard(id, asset) {
-    const card = document.getElementById(id);
-    const file = document.getElementById(id + '-filename');
-    const arrow = document.getElementById(id + '-arrow');
-    const badge = document.getElementById(id + '-badge');
-
-    card.classList.remove('wip');
-    if (arrow) arrow.style.display = '';
-    if (badge) badge.style.display = 'none';
-
-    if (asset) {
-      card.href = asset.browser_download_url;
-      file.textContent = asset.name;
-    } else {
-      card.classList.add('wip');
-      file.textContent = 'Work in progress';
-      if (arrow) arrow.style.display = 'none';
-      if (badge) badge.style.display = 'inline';
-    }
-  }
-
-
-
-  async function fetchReleases() {
-    try {
-      const response = await fetch('https://api.github.com/repos/corecommit/PollyMC-Continued/releases?per_page=10');
-      if (!response.ok) return;
-
-      allReleases = await response.json();
-      if (!allReleases.length) return;
-
-      /* Update global version badges with the newest release */
-      document.querySelectorAll('.app-version').forEach(el => {
-        el.textContent = allReleases[0].tag_name;
-      });
-
-      /* Build each platform's dropdown independently */
-      PLATFORM_CONFIG.forEach(({ dropdownId, cardId, match }) => {
-        const dd = document.getElementById(dropdownId);
-        if (!dd) return;
-
-        /* Only include releases that have a real asset for THIS platform */
-        const available = allReleases.filter(r => match(r));
-        const menu = dd.querySelector('.dl-dropdown-menu');
-        menu.innerHTML = '';
-
-        if (!available.length) {
-          const valueEl = dd.querySelector('.dl-dropdown-value');
-          const btn     = dd.querySelector('.dl-dropdown-btn');
-          if (valueEl) valueEl.textContent = 'No builds yet';
-          if (btn) btn.disabled = true;
-          setDownloadCard(cardId, null);
-          return;
-        }
-
-        available.forEach(r => {
-          const asset = match(r);
-          const item  = document.createElement('div');
-          item.className = 'dl-dropdown-item';
-          item.dataset.value = r.tag_name;
-          item.setAttribute('role', 'option');
-          item.setAttribute('aria-selected', 'false');
-          item.textContent = r.tag_name;
-          item.addEventListener('click', (e) => {
-            e.stopPropagation();
-            setDropdownValue(dropdownId, r.tag_name);
-            setDownloadCard(cardId, asset);
-            dd.classList.remove('open');
-            dd.querySelector('.dl-dropdown-btn').setAttribute('aria-expanded', 'false');
-          });
-          menu.appendChild(item);
-        });
-
-        initDropdown(dropdownId);
-
-        /* Auto-select the newest available version for this platform */
-        const first = available[0];
-        setDropdownValue(dropdownId, first.tag_name);
-        setDownloadCard(cardId, match(first));
-      });
-    } catch (error) {
-      console.error('Error fetching releases:', error);
-    }
-  }
-  fetchReleases();
-</script>
 </body>
 </html>
