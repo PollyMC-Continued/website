@@ -165,10 +165,14 @@ h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 4vw, 3rem); l
 .dl-badge i { margin-right: 0.3rem; }
 .dl-card-link.wip { opacity: 0.55; pointer-events: none; }
 .changelog-body { display: grid; grid-template-columns: 260px 1fr; }
-.cl-sidebar { padding: 2.5rem 2rem; border-right: 1px solid var(--line); }
+.cl-sidebar { padding: 2.5rem 2rem; border-right: 1px solid var(--line); display: flex; flex-direction: column; }
 .cl-version { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; color: var(--green); letter-spacing: 0.04em; line-height: 1; margin-bottom: 0.4rem; }
-.cl-date { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 2rem; }
-.cl-tag { display: inline-block; padding: 0.25rem 0.7rem; border: 1px solid var(--green); color: var(--green); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.cl-date { font-size: 0.7rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1.4rem; }
+.cl-tag { display: inline-block; padding: 0.25rem 0.7rem; border: 1px solid var(--green); color: var(--green); font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; align-self: flex-start; }
+.cl-ver-picker { margin-top: 2rem; }
+.cl-ver-label { font-size: 0.65rem; color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.6rem; }
+.cl-gh-link { display: flex; align-items: center; gap: 0.5rem; margin-top: 1.5rem; font-size: 0.72rem; letter-spacing: 0.05em; color: var(--muted); text-decoration: none; transition: color 0.15s; }
+.cl-gh-link:hover { color: var(--green); }
 .cl-content { padding: 2.5rem 3rem; }
 .cl-group { margin-bottom: 2rem; }
 .cl-group:last-child { margin-bottom: 0; }
@@ -176,9 +180,16 @@ h2 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2rem, 4vw, 3rem); l
 .cl-group-head.new i { color: var(--green); }
 .cl-group-head.improved i { color: var(--green2); }
 .cl-group-head.fixed i { color: #fbbf24; }
+.cl-group-head.removed i { color: #f87171; }
+.cl-group-head.other i { color: var(--muted); }
 .cl-group ul { list-style: none; display: flex; flex-direction: column; gap: 0.45rem; }
 .cl-group li { font-size: 0.82rem; color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-weight: 300; padding-left: 1rem; position: relative; }
 .cl-group li::before { content: ''; position: absolute; left: 0; top: 0.6em; width: 4px; height: 1px; background: var(--dim); }
+.cl-group li ul { margin-top: 0.45rem; padding-left: 0.2rem; }
+.cl-group li li { font-size: 0.78rem; color: var(--muted); }
+.cl-group li li::before { background: var(--line2); }
+.cl-error { font-size: 0.82rem; color: var(--muted); font-family: 'IBM Plex Sans', sans-serif; font-weight: 300; }
+.cl-error a { color: var(--green); }
 .faq-body { display: grid; grid-template-columns: repeat(2, 1fr); }
 .faq-col { border-right: 1px solid var(--line); }
 .faq-col:last-child { border-right: none; }

@@ -224,46 +224,26 @@
   </div>
   <div class="changelog-body r">
     <div class="cl-sidebar">
-      <div class="cl-version app-version">v9.0.0</div>
-      <div class="cl-date">Revival Release · 2025</div>
+      <div class="cl-version" id="cl-version">v9.0.0</div>
+      <div class="cl-date" id="cl-source">Synced from CHANGELOG.md</div>
       <span class="cl-tag">Community Build</span>
-    </div>
-    <div class="cl-content">
-      <div class="cl-group">
-        <div class="cl-group-head new"><i class="fa-solid fa-sparkles"></i> New</div>
-          <ul>
-            <li>Offline accounts — add and play without Microsoft login</li>
-            <li>No demo mode for offline accounts — full game access</li>
-            <li>Custom offline skin support with local skin agent</li>
-            <li>Quick Launch button — relaunch last played instance instantly</li>
-            <li>Performance presets with auto RAM detection (Low/Medium/High)</li>
-            <li>Instance backup and restore as zip files</li>
-            <li>Crash Reports viewer — quick access to crash logs</li>
-            <li>Minimize to system tray instead of closing</li>
-            <li>Memory usage monitor in the status bar</li>
-            <li>Resolution presets (720p/1080p/1440p/4K)</li>
-            <li>Auto-launch last played instance on startup</li>
-            <li>NSIS setup installer with upgrade support and launch checkbox</li>
-            <li>Custom PollyMC-Continued icon throughout the app</li>
-          </ul>
+      <div class="cl-ver-picker">
+        <div class="cl-ver-label">Browse a release</div>
+        <div class="dl-dropdown" id="cl-ver-dd">
+          <button class="dl-dropdown-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="dl-dropdown-value">Loading…</span>
+            <i class="fa-solid fa-chevron-down dl-dropdown-caret"></i>
+          </button>
+          <div class="dl-dropdown-menu" role="listbox"></div>
         </div>
-      <div class="cl-group">
-        <div class="cl-group-head improved"><i class="fa-solid fa-arrow-trend-up"></i> Improved</div>
-        <ul>
-          <li>Setup wizard now offers offline account option on first launch</li>
-          <li>Skin management enabled for offline accounts</li>
-          <li>Account list shows offline/online status clearly</li>
-          <li>Better Java auto-detection for modern JDK versions</li>
-        </ul>
       </div>
+      <a class="cl-gh-link" id="cl-gh-link" href="https://github.com/corecommit/PollyMC-Continued/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
+        <i class="fa-brands fa-github"></i> View on GitHub
+      </a>
+    </div>
+    <div class="cl-content" id="cl-content">
       <div class="cl-group">
-        <div class="cl-group-head fixed"><i class="fa-solid fa-wrench"></i> Fixed</div>
-        <ul>
-          <li>Offline accounts no longer forced into demo mode</li>
-          <li>Removed hardcoded Prism Launcher strings throughout UI</li>
-          <li>Fixed missing DLL dependencies for new installations</li>
-          <li>Fixed skin agent crash on certain Java versions</li>
-        </ul>
+        <div class="cl-group-head new"><i class="fa-solid fa-spinner fa-spin"></i> Loading changelog…</div>
       </div>
     </div>
   </div>
