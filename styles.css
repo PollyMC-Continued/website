@@ -249,8 +249,8 @@ footer { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid va
   .hero-main { grid-template-columns: 1fr; }
   .hero-left { padding: 3rem 1.5rem 2.5rem; border-right: none; }
   
-  /* Show terminal on mobile */
-  .hero-right { display: flex; padding: 0 1.5rem 2.5rem; border-bottom: 1px solid var(--line); }
+  /* Hide terminal on mobile */
+  .hero-right { display: none; }
   
   h1 { font-size: clamp(3.5rem, 13vw, 5.5rem); }
   .hero-desc { max-width: 100%; font-size: 0.9rem; }
