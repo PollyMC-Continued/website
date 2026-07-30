@@ -47,18 +47,20 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
 }
 
 nav {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 10000;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 3rem;
-  padding: 0 2.5rem;
-  height: 52px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(8,9,9,0.92);
-  backdrop-filter: blur(12px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0 1.5rem 0 2.5rem;
+    height: 52px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(8, 9, 9, 0.92);
+    backdrop-filter: blur(12px);
 }
 .nav-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.25rem; letter-spacing: 0.12em; color: var(--white); }
 .nav-logo em { color: var(--green); font-style: normal; }
@@ -73,10 +75,13 @@ nav {
 .nav-center a:last-child { border-right: none; }
 .nav-center a.active { color: var(--green); background: var(--panel); box-shadow: inset 0 -2px 0 var(--green); }
 
+.nav-right {
+  display: flex; align-items: center; gap: 1.5rem;
+}
 .nav-right a {
-  font-size: 0.72rem; letter-spacing: 0.08em; color: var(--muted);
-  text-transform: uppercase; transition: color 0.15s;
-  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 1.2rem; color: var(--muted);
+  transition: color 0.15s;
+  display: flex; align-items: center;
 }
 .nav-right a:hover { color: var(--green); }
 
