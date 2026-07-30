@@ -106,6 +106,8 @@ h1 .accent { color: var(--green); }
 .terminal-bar { background: var(--line); padding: 0.55rem 1rem; display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--line2); }
 .tbar-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
 .terminal-body { padding: 1.4rem 1.5rem; }
+.term-input { background: transparent; border: none; color: var(--green); font-family: inherit; font-size: inherit; outline: none; caret-color: var(--green); width: 30ch; }
+.term-input::selection { background: var(--green); color: #000; }
 .t-dim { color: var(--muted); }
 .t-green { color: var(--green); }
 .t-teal { color: var(--green2); }
