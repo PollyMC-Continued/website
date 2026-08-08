@@ -7,17 +7,17 @@
 <meta name="description" content="Download PollyMC-Continued for Windows, Linux and macOS.">
 <meta name="theme-color" content="#333333">
 <link rel="icon" type="image/svg+xml" href="../logo.svg">
-<link rel="canonical" href="https://pollymc-continued.example.com/downloads/">
+<link rel="canonical" href="https://pollymc.vercel.app/downloads/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="PollyMC-Continued">
 <meta property="og:title" content="Downloads - PollyMC-Continued">
 <meta property="og:description" content="Download PollyMC-Continued for Windows, Linux and macOS.">
-<meta property="og:image" content="https://pollymc-continued.example.com/background.png">
-<meta property="og:url" content="https://pollymc-continued.example.com/downloads/">
+<meta property="og:image" content="https://pollymc.vercel.app/background.png">
+<meta property="og:url" content="https://pollymc.vercel.app/downloads/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Downloads - PollyMC-Continued">
 <meta name="twitter:description" content="Download PollyMC-Continued for Windows, Linux and macOS.">
-<meta name="twitter:image" content="https://pollymc-continued.example.com/background.png">
+<meta name="twitter:image" content="https://pollymc.vercel.app/background.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&display=swap">
@@ -86,8 +86,8 @@
       <div class="panel-links">
         <h2 class="dl-title">Windows Download</h2>
         <p class="dl-version">Download PollyMC-Continued <span class="ver">latest</span></p>
-        <a class="button dl-button" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" target="_blank" rel="noopener">Installer (.exe)</a>
-        <a class="button dl-button secondary" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" target="_blank" rel="noopener">Portable (.zip)</a>
+        <a class="button dl-button" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" data-asset="-Windows-Setup.exe" target="_blank" rel="noopener">Installer (.exe)</a>
+        <a class="button dl-button secondary" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" data-asset="-Windows-portable.zip" target="_blank" rel="noopener">Portable (.zip)</a>
       </div>
     </div></div>
     <div class="download-panel hidden" id="panel-macos" role="tabpanel" aria-labelledby="tab-macos"><div class="panel-body">
@@ -99,8 +99,8 @@
       <div class="panel-links">
         <h2 class="dl-title">macOS Download</h2>
         <p class="dl-version">Download PollyMC-Continued <span class="ver">latest</span></p>
-        <a class="button dl-button" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" target="_blank" rel="noopener">Disk Image (.dmg)</a>
-        <a class="button dl-button secondary" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" target="_blank" rel="noopener">Archive (.zip)</a>
+        <a class="button dl-button" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" data-asset="-macOS-arm64.dmg" target="_blank" rel="noopener">Disk Image (.dmg)</a>
+        <a class="button dl-button secondary" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" data-asset="-macOS-arm64.zip" target="_blank" rel="noopener">Archive (.zip)</a>
         <small class="dl-note">macOS is currently Apple Silicon / ARM64 only.</small>
       </div>
     </div></div>
@@ -113,7 +113,7 @@
       <div class="panel-links">
         <h2 class="dl-title">Linux Download</h2>
         <p class="dl-version">Download PollyMC-Continued <span class="ver">latest</span></p>
-        <a class="button dl-button" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" target="_blank" rel="noopener">AppImage</a>
+        <a class="button dl-button" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" data-asset="-Linux-x86_64.AppImage" target="_blank" rel="noopener">AppImage</a>
       </div>
     </div></div>
   </div>
@@ -172,14 +172,20 @@
     return !!entry && (Date.now() - entry.time) < GH_CACHE_TTL;
   }
 
-  // ---------- latest release version ----------
+  // ---------- latest release version + download URLs ----------
   (function () {
     var CACHE_KEY = 'pollymc_latest_release_v1';
 
-    function applyVersion(tagName) {
-      if (!tagName) return;
-      var ver = tagName.replace(/^v/, '');
+    function applyRelease(rel) {
+      if (!rel || !rel.tag_name) return;
+      var ver = rel.tag_name.replace(/^v/, '');
       document.querySelectorAll('.ver').forEach(function (el) { el.textContent = 'v' + ver; });
+      var assets = {};
+      (rel.assets || []).forEach(function (a) { assets[a.name] = a.browser_download_url; });
+      document.querySelectorAll('a.dl-button[data-asset]').forEach(function (el) {
+        var match = (rel.assets || []).filter(function (a) { return a.name.indexOf(el.getAttribute('data-asset')) !== -1; });
+        if (match.length) el.href = match[0].browser_download_url;
+      });
     }
 
     function fetchVersion() {
@@ -190,8 +196,8 @@
         })
         .then(function (rel) {
           if (!rel.tag_name) return;
-          ghCacheSet(CACHE_KEY, rel.tag_name);
-          applyVersion(rel.tag_name);
+          ghCacheSet(CACHE_KEY, rel);
+          applyRelease(rel);
         })
         .catch(function () {
           // if we have a stale cached value, it's already been applied below - just
@@ -200,7 +206,7 @@
     }
 
     var cached = ghCacheGet(CACHE_KEY);
-    if (cached) applyVersion(cached.value);
+    if (cached) applyRelease(cached.value);
     if (!ghCacheIsFresh(cached)) fetchVersion();
   })();
 
