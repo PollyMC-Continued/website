@@ -1,6 +1,8 @@
 # PollyMC-Continued — Website
 
-The official landing page for **PollyMC-Continued**, a community revival of the PollyMC Minecraft launcher. Built as a static site — no frameworks, no build step, just HTML, CSS, and vanilla JS.
+The official landing page for **PollyMC-Continued**, a community revival of the PollyMC Minecraft launcher.
+
+Live at **[https://pollymc.vercel.app/](https://pollymc.vercel.app/)** — static site, no frameworks, no build step. Plain HTML, CSS, and vanilla JS.
 
 ---
 
@@ -8,17 +10,17 @@ The official landing page for **PollyMC-Continued**, a community revival of the 
 
 PollyMC-Continued picks up where the original PollyMC left off. It syncs against the [Prism Launcher](https://prismlauncher.org/) upstream, adds NeoForge support, and commits to long-term community maintenance. No Microsoft account required. No DRM. Fully open source under GPL-3.0.
 
-This repository contains only the **website source**. For the launcher itself, see the main PollyMC-Continued launcher repository.
+This repository contains only the **website source**. For the launcher itself, see the main [PollyMC-Continued launcher repository](https://github.com/corecommit/PollyMC-Continued).
 
 ---
 
 ## Stack
 
-- **HTML5** — semantic, single-page layout
+- **HTML5** — semantic, multi-page layout with clean URLs (`/changelog/`, `/about/`, `/downloads/`)
 - **CSS3** — custom properties, CSS Grid, Flexbox, no preprocessor
-- **Vanilla JS** — IntersectionObserver scroll reveals, mobile nav toggle, FAQ accordion
-- **Fonts** — Bebas Neue, IBM Plex Mono, IBM Plex Sans (Google Fonts)
-- **Icons** — Font Awesome 6 (CDN)
+- **Vanilla JS** — scroll reveal, tab UI, GitHub API fetches (changelog, contributors, latest release)
+- **Fonts** — Rubik (Google Fonts)
+- **Assets** — WebP backgrounds, PNG screenshots
 
 ---
 
@@ -26,9 +28,16 @@ This repository contains only the **website source**. For the launcher itself, s
 
 ```
 .
-├── index.html      # Main page — all sections
-├── styles.css      # All styles, includes responsive breakpoints
-├── app.js          # Scroll reveal, mobile nav, FAQ toggle
+├── index.html          # Homepage
+├── about/index.html    # About — maintainers + contributors (from GitHub API)
+├── changelog/index.html# Changelog (fetched from the launcher repo's CHANGELOG.md)
+├── downloads/index.html# Downloads — per-OS tabs, URLs resolved from latest release
+├── 404.html            # Not-found page
+├── assets/             # background.webp, screenshots (PNG)
+├── logo.svg
+├── style.css
+├── robots.txt
+├── sitemap.xml
 ├── README.md
 └── LICENSE
 ```
@@ -37,7 +46,7 @@ This repository contains only the **website source**. For the launcher itself, s
 
 ## Contributing
 
-Issues and pull requests are welcome. If you spot a visual bug, broken link, or want to add a new section, open an issue first so we can discuss it.
+Issues and pull requests are welcome. If you spot a visual bug or broken link, open an issue first so we can discuss it.
 
 Please keep PRs focused — one fix or feature per PR.
 
