@@ -3,23 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>About - PollyMC-Continued</title>
-<meta name="description" content="About PollyMC-Continued, its maintainers and contributors.">
+<title>Downloads - PollyMC-Continued</title>
+<meta name="description" content="Download PollyMC-Continued for Windows, Linux and macOS.">
 <meta name="theme-color" content="#333333">
 <link rel="icon" href="../favicon.ico" sizes="32x32">
 <link rel="icon" type="image/svg+xml" href="../logo.svg">
 <link rel="icon" type="image/png" sizes="48x48" href="../favicon-48.png">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<link rel="canonical" href="https://pollymc.vercel.app/about/">
+<link rel="canonical" href="https://pollymc.vercel.app/downloads/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="PollyMC-Continued">
-<meta property="og:title" content="About - PollyMC-Continued">
-<meta property="og:description" content="About PollyMC-Continued, its maintainers and contributors.">
+<meta property="og:title" content="Downloads - PollyMC-Continued">
+<meta property="og:description" content="Download PollyMC-Continued for Windows, Linux and macOS.">
 <meta property="og:image" content="https://pollymc.vercel.app/background.png">
-<meta property="og:url" content="https://pollymc.vercel.app/about/">
+<meta property="og:url" content="https://pollymc.vercel.app/downloads/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="About - PollyMC-Continued">
-<meta name="twitter:description" content="About PollyMC-Continued, its maintainers and contributors.">
+<meta name="twitter:title" content="Downloads - PollyMC-Continued">
+<meta name="twitter:description" content="Download PollyMC-Continued for Windows, Linux and macOS.">
 <meta name="twitter:image" content="https://pollymc.vercel.app/background.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,8 +27,7 @@
 <link rel="stylesheet" href="../style.css">
 </head>
 <body>
-<a class="skip-link" href="#main">Skip to content</a>
-<img class="background" src="../assets/aboutbg.webp" alt="" aria-hidden="true" role="presentation">
+<img class="background" src="../assets/background.webp" alt="" aria-hidden="true" role="presentation">
 
 <header class="container">
   <div class="top-panel">
@@ -43,7 +42,7 @@
     <ul class="nav">
       <li class="nav-item"><a href="../index.html">Home</a></li>
       <li class="nav-item"><a href="../changelog/">Changelog</a></li>
-      <li class="nav-item"><a href="../about/" aria-current="page">About</a></li>
+      <li class="nav-item"><a href="../about/">About</a></li>
     </ul>
     </div>
     <div class="links">
@@ -56,7 +55,7 @@
         </a>
       </div>
       <div>
-        <a class="button" href="../downloads/">Download</a>
+        <a class="button" href="../index.html">Home</a>
       </div>
     </div>
   </nav>
@@ -67,52 +66,59 @@
 
 <main id="main" class="container">
   <div class="content">
-    <h1 class="sec-h">About</h1>
-
-    <div class="row">
-      <div class="column">
-        <div class="reveal">
-          <h1>What is PollyMC-Continued?</h1>
-          <div class="feature-subs">
-            <p>PollyMC-Continued is a free, open-source resurrection of the PollyMC project — a Minecraft launcher forked from Prism Launcher that started with a simple promise: play the game without a Microsoft account.</p>
-            <p>Add an offline account and launch the full game with no demo mode and no restrictions — while still supporting normal Microsoft accounts. Custom skins, per-version instances, mods, and a lightweight Qt interface on Windows, Linux and macOS.</p>
-            <p>Every line is released under the GPL-3.0 license — focused on user freedom and free redistributability.</p>
-          </div>
-        </div>
-      </div>
-      <div class="column">
-        <div class="shot reveal">
-          <span class="shot-ph">Screenshot coming soon — add <code>website/assets/about.png</code></span>
-          <img src="../assets/about.png" alt="PollyMC-Continued launcher" loading="lazy" decoding="async" onerror="this.remove()">
-        </div>
-      </div>
+    <div class="downloads-head">
+      <h1 class="sec-h">Downloads</h1>
+      <p class="downloads-total" id="downloads-total" aria-live="polite">
+        <span class="num">…</span>
+        <span class="label">loading total downloads…</span>
+      </p>
     </div>
-  </div>
 
-  <div class="infobox">
-    <h1>Maintainers</h1>
-    <ul class="people" id="maintainers">
-      <li>
-        <a href="https://github.com/corecommit" target="_blank" rel="noopener">
-          <img src="https://avatars.githubusercontent.com/corecommit?s=160" alt="corecommit" loading="lazy">
-          corecommit
-          <span class="role">Owner</span>
-        </a>
-      </li>
-      <li>
-        <a href="https://github.com/namiseeqoe" target="_blank" rel="noopener">
-          <img src="https://avatars.githubusercontent.com/namiseeqoe?s=160" alt="namiseeqoe" loading="lazy">
-          namiseeqoe
-          <span class="role">Tester</span>
-        </a>
-      </li>
+    <ul class="download-tabs" role="tablist">
+      <li role="presentation"><a href="#windows" role="tab" id="tab-windows" aria-selected="true" aria-controls="panel-windows">Windows</a></li>
+      <li role="presentation"><a href="#macos" role="tab" id="tab-macos" aria-selected="false" aria-controls="panel-macos">macOS</a></li>
+      <li role="presentation"><a href="#linux" role="tab" id="tab-linux" aria-selected="false" aria-controls="panel-linux">Linux</a></li>
     </ul>
-  </div>
 
-  <div class="infobox">
-    <h1>Contributors</h1>
-    <p class="feature-subs" id="contrib-note">Loading contributors from GitHub…</p>
-    <ul class="people" id="contributors"></ul>
+    <div class="download-panel" id="panel-windows" role="tabpanel" aria-labelledby="tab-windows"><div class="panel-body">
+      <div class="download-screenshot">
+        <span class="shot-ph">Screenshot coming soon</span>
+        <img class="shot-bg" src="../assets/windows.png" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="this.remove()">
+        <img class="shot-fg" src="../assets/windows.png" alt="PollyMC-Continued on Windows" loading="lazy" decoding="async" onload="this.closest('.download-screenshot').classList.add('has-shot')" onerror="this.remove()">
+      </div>
+      <div class="panel-links">
+        <h2 class="dl-title">Windows Download</h2>
+        <p class="dl-version">Download PollyMC-Continued <span class="ver">latest</span></p>
+        <a class="button dl-button" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" data-asset="-Windows-Setup.exe" target="_blank" rel="noopener">Installer (.exe)</a>
+        <a class="button dl-button secondary" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" data-asset="-Windows-portable.zip" target="_blank" rel="noopener">Portable (.zip)</a>
+      </div>
+    </div></div>
+    <div class="download-panel hidden" id="panel-macos" role="tabpanel" aria-labelledby="tab-macos"><div class="panel-body">
+      <div class="download-screenshot">
+        <span class="shot-ph">Screenshot coming soon</span>
+        <img class="shot-bg" src="../assets/macos.png" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="this.remove()">
+        <img class="shot-fg" src="../assets/macos.png" alt="PollyMC-Continued on macOS" loading="lazy" decoding="async" onload="this.closest('.download-screenshot').classList.add('has-shot')" onerror="this.remove()">
+      </div>
+      <div class="panel-links">
+        <h2 class="dl-title">macOS Download</h2>
+        <p class="dl-version">Download PollyMC-Continued <span class="ver">latest</span></p>
+        <a class="button dl-button" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" data-asset="-macOS-arm64.dmg" target="_blank" rel="noopener">Disk Image (.dmg)</a>
+        <a class="button dl-button secondary" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" data-asset="-macOS-arm64.zip" target="_blank" rel="noopener">Archive (.zip)</a>
+        <small class="dl-note">macOS is currently Apple Silicon / ARM64 only.</small>
+      </div>
+    </div></div>
+    <div class="download-panel hidden" id="panel-linux" role="tabpanel" aria-labelledby="tab-linux"><div class="panel-body">
+      <div class="download-screenshot">
+        <span class="shot-ph">Screenshot coming soon</span>
+        <img class="shot-bg" src="../assets/linux.png" alt="" aria-hidden="true" loading="lazy" decoding="async" onerror="this.remove()">
+        <img class="shot-fg" src="../assets/linux.png" alt="PollyMC-Continued on Linux" loading="lazy" decoding="async" onload="this.closest('.download-screenshot').classList.add('has-shot')" onerror="this.remove()">
+      </div>
+      <div class="panel-links">
+        <h2 class="dl-title">Linux Download</h2>
+        <p class="dl-version">Download PollyMC-Continued <span class="ver">latest</span></p>
+        <a class="button dl-button" href="https://github.com/corecommit/PollyMC-Continued/releases/latest" data-asset="-Linux-x86_64.AppImage" target="_blank" rel="noopener">AppImage</a>
+      </div>
+    </div></div>
   </div>
 </main>
 
@@ -128,49 +134,176 @@
 </footer>
 
 <script>
-  document.getElementById('year').textContent = new Date().getFullYear();
+  document.getElementById('year').textContent = '2026';
 
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (e){ if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
   }, { threshold: 0.2 });
   document.querySelectorAll('.reveal').forEach(function (el){ io.observe(el); });
 
-  fetch('https://api.github.com/repos/corecommit/PollyMC-Continued/contributors?per_page=100')
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-      var note = document.getElementById('contrib-note');
-      var list = document.getElementById('contributors');
-      if (!Array.isArray(data) || data.length === 0) {
-        note.textContent = 'No contributors found.';
-        return;
-      }
-      note.textContent = data.length + ' contributor' + (data.length === 1 ? '' : 's');
-      data.forEach(function (c) {
-        if (!c || !c.login) return;
-        var li = document.createElement('li');
-        var a = document.createElement('a');
-        a.href = c.html_url || ('https://github.com/' + c.login);
-        a.target = '_blank';
-        a.rel = 'noopener';
-        var img = document.createElement('img');
-        img.src = (c.avatar_url || 'https://github.com/' + c.login + '.png') + '?s=160';
-        img.alt = c.login;
-        img.loading = 'lazy';
-        a.appendChild(img);
-        a.appendChild(document.createTextNode(c.login));
-        var role = document.createElement('span');
-        role.className = 'role';
-        role.textContent = c.contributions + ' contributions';
-        a.appendChild(role);
-        li.appendChild(a);
-        list.appendChild(li);
+  // ---------- shared GitHub API cache helpers ----------
+  // GitHub's unauthenticated API is limited to 60 requests/hour per IP, and this
+  // page alone used to fire off up to 11 requests on every single page load
+  // (1 for the latest release + up to 10 for paginated release history). That
+  // burns through the quota fast when a few people load the page close together.
+  // Instead we cache results in localStorage and only hit the API again once the
+  // cached value is more than 5 minutes old.
+  var GH_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  function ghCacheGet(key) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed.time !== 'number') return null;
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function ghCacheSet(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify({ time: Date.now(), value: value }));
+    } catch (e) {
+      // localStorage unavailable (private browsing, quota, etc) - fail silently,
+      // the page still works, it just re-fetches every load.
+    }
+  }
+
+  function ghCacheIsFresh(entry) {
+    return !!entry && (Date.now() - entry.time) < GH_CACHE_TTL;
+  }
+
+  // ---------- latest release version + download URLs ----------
+  (function () {
+    var CACHE_KEY = 'pollymc_latest_release_v1';
+
+    function applyRelease(rel) {
+      if (!rel || !rel.tag_name) return;
+      var ver = rel.tag_name.replace(/^v/, '');
+      document.querySelectorAll('.ver').forEach(function (el) { el.textContent = 'v' + ver; });
+      var assets = {};
+      (rel.assets || []).forEach(function (a) { assets[a.name] = a.browser_download_url; });
+      document.querySelectorAll('a.dl-button[data-asset]').forEach(function (el) {
+        var match = (rel.assets || []).filter(function (a) { return a.name.indexOf(el.getAttribute('data-asset')) !== -1; });
+        if (match.length) el.href = match[0].browser_download_url;
       });
-    })
-    .catch(function () {
-      var note = document.getElementById('contrib-note');
-      note.innerHTML = 'Could not load contributors from GitHub (rate limited?). ' +
-        '<a href="https://github.com/corecommit/PollyMC-Continued/graphs/contributors" target="_blank" rel="noopener">View contributors on GitHub instead</a>.';
+    }
+
+    function fetchVersion() {
+      fetch('https://api.github.com/repos/corecommit/PollyMC-Continued/releases/latest')
+        .then(function (r) {
+          if (!r.ok) throw new Error('GitHub API error ' + r.status);
+          return r.json();
+        })
+        .then(function (rel) {
+          if (!rel.tag_name) return;
+          ghCacheSet(CACHE_KEY, rel);
+          applyRelease(rel);
+        })
+        .catch(function () {
+          // if we have a stale cached value, it's already been applied below - just
+          // silently give up on refreshing it.
+        });
+    }
+
+    var cached = ghCacheGet(CACHE_KEY);
+    if (cached) applyRelease(cached.value);
+    if (!ghCacheIsFresh(cached)) fetchVersion();
+  })();
+
+  // ---------- total downloads across all releases ----------
+  (function () {
+    var numEl = document.querySelector('#downloads-total .num');
+    var labelEl = document.querySelector('#downloads-total .label');
+    var CACHE_KEY = 'pollymc_downloads_total_v1';
+    var MAX_PAGES = 10;
+
+    function render(total, stale) {
+      numEl.textContent = total.toLocaleString();
+      labelEl.textContent = 'total downloads across all releases' + (stale ? ' (cached)' : '');
+    }
+
+    function fetchTotal() {
+      var total = 0;
+
+      function fetchPage(page) {
+        return fetch('https://api.github.com/repos/corecommit/PollyMC-Continued/releases?per_page=100&page=' + page)
+          .then(function (r) {
+            if (!r.ok) throw new Error('GitHub API error ' + r.status);
+            return r.json();
+          })
+          .then(function (releases) {
+            if (!Array.isArray(releases) || releases.length === 0) return false;
+            releases.forEach(function (rel) {
+              (rel.assets || []).forEach(function (asset) {
+                total += asset.download_count || 0;
+              });
+            });
+            return releases.length === 100 && page < MAX_PAGES;
+          });
+      }
+
+      function run(page) {
+        fetchPage(page)
+          .then(function (hasMore) {
+            if (hasMore) {
+              run(page + 1);
+            } else {
+              ghCacheSet(CACHE_KEY, total);
+              render(total, false);
+            }
+          })
+          .catch(function () {
+            // Fetch failed (often a 403 rate limit). Fall back to whatever we
+            // already rendered from cache; only show a hard error if we never
+            // had anything to show at all.
+            var cached = ghCacheGet(CACHE_KEY);
+            if (cached) {
+              render(cached.value, true);
+            } else {
+              numEl.textContent = '—';
+              labelEl.textContent = 'Could not load download stats from GitHub';
+            }
+          });
+      }
+
+      run(1);
+    }
+
+    var cached = ghCacheGet(CACHE_KEY);
+    if (cached) render(cached.value, !ghCacheIsFresh(cached));
+    if (!ghCacheIsFresh(cached)) fetchTotal();
+
+    // If the tab is left open, keep the number honest by re-checking every
+    // 5 minutes and only hitting the network once the cache has gone stale.
+    setInterval(function () {
+      var current = ghCacheGet(CACHE_KEY);
+      if (!ghCacheIsFresh(current)) fetchTotal();
+    }, GH_CACHE_TTL);
+  })();
+
+  (function () {
+    var tabs = document.querySelectorAll('.download-tabs a');
+    function select(tab) {
+      tabs.forEach(function (t) {
+        var on = t === tab;
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+        t.parentElement.classList.toggle('download-tab-active', on);
+        document.getElementById(t.getAttribute('aria-controls')).classList.toggle('hidden', !on);
+      });
+    }
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function (e) {
+        e.preventDefault();
+        select(t);
+      });
     });
+    var hash = (location.hash || '').slice(1);
+    var match = Array.prototype.find.call(tabs, function (t) { return t.getAttribute('aria-controls') === 'panel-' + hash; });
+    select(match || tabs[0]);
+  })();
 </script>
 </body>
 </html>
