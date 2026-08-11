@@ -253,7 +253,7 @@ main {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 1em;
+    padding: 1em 0;
     text-align: center;
 }
 .hero-title {
@@ -314,24 +314,26 @@ main {
 .content {
     background-color: var(--background);
     border-radius: 1em;
-    padding: 1em;
+    padding: 2em;
     backdrop-filter: blur(10px);
     h1 {
         font-weight: 800;
+        margin: .5em 0;
     }
 }
 h1.sec-h {
     font-size: 1.9em;
-    margin: 0.25em 0 0.35em;
+    margin: 0;
 }
 .infobox {
     background-color: var(--background);
-    padding: 1em 1.5em;
+    padding: .75em 1.5em;
     border-radius: 1em;
     margin-top: 1.5em;
     h1 {
         font-size: 1.9em;
         font-weight: 800;
+        margin: .5em 0
     }
     h2 {
         font-size: 1.35em;
@@ -616,13 +618,13 @@ hr {
         font-weight: 700;
     }
     .tag.fix {
-        color: #ff9b7d;
+        color: #ffaf97;
     }
     .tag.add {
         color: var(--primary);
     }
     .tag.rem {
-        color: #c58bff;
+        color: #d9b3ff;
     }
 }
 
@@ -742,11 +744,8 @@ hr {
     .dl-title {
         font-size: 1.6em;
     }
-    .content {
-        padding: 0.75em;
-    }
-    .infobox {
-        padding: 0.75em;
+    content {
+      padding: 2em 1.5em
     }
     .changelog {
         padding: 0.75em;
