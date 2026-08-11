@@ -1,0 +1,21 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const description = 'Page not found.';
+---
+
+<Layout title="404" description={description} noindex>
+	<main id="main" class="container">
+		<div class="content" style="text-align:center;padding:3em 1em">
+			<h1 class="sec-h" style="font-size:clamp(3.5em, 22vw, 6em);margin:.1em 0;line-height:1">
+				404
+			</h1>
+			<h1 style="font-size:2em">Page not found</h1>
+			<div class="feature-subs" style="text-align:center;max-width:30em;margin:0 auto">
+				<p>The page you're looking for doesn't exist — maybe it moved, or the link is wrong.</p>
+			</div>
+			<br />
+			<a class="button is-big" href="/">Back to Home</a>
+		</div>
+	</main>
+</Layout>

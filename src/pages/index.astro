@@ -1,0 +1,128 @@
+---
+import Layout from "../layouts/Layout.astro";
+import FeatureRow from "../components/FeatureRow.astro";
+import Screenshot from "../components/Screenshot.astro";
+import { links, site } from "../lib/site";
+import hero from "../assets/hero.png";
+import accounts from "../assets/accounts.png";
+import skins from "../assets/skins.png";
+import instances from "../assets/instances.png";
+import appearance from "../assets/appearance.png";
+
+const description =
+    "An Open Source Minecraft launcher with offline accounts, custom skins and instance management. Play Minecraft without a Microsoft account.";
+---
+
+<Layout
+    title="Home"
+    description={description}
+    canonical={`${site.url}/`}
+    active="home"
+>
+    <section class="hero-body">
+        <div class="row container">
+            <div class="column">
+                <div>
+                    <h1 class="hero-title">PollyMC-Continued</h1>
+                    <p class="subtitle">
+                        A Minecraft launcher without the Microsoft account.
+                        Manage multiple instances, accounts and mods. Focused on
+                        user freedom.
+                    </p>
+                    <br />
+                    <a class="button is-big" href="/downloads/">Download Now</a>
+                </div>
+            </div>
+            <div class="column">
+                <Screenshot
+                    src={hero}
+                    alt="PollyMC-Continued main window"
+                    assetHint="website/assets/hero.png"
+                />
+            </div>
+        </div>
+    </section>
+
+    <main id="main" class="container tmpl-home">
+        <div class="content">
+            <h1 class="sec-h" id="features">Features</h1>
+
+            <FeatureRow
+                title="Play without a Microsoft account"
+                paragraphs={[
+                    "Add an offline account and launch the full game. No demo mode, no login prompts, no restrictions. You can also use your normal Microsoft account if you have one.",
+                ]}
+                reverse
+                screenshot={{
+                    src: accounts,
+                    alt: "Offline account setup",
+                    assetHint: "website/assets/accounts.png",
+                }}
+            />
+
+            <FeatureRow
+                title="Custom skins"
+                paragraphs={[
+                    "Save and load skins locally, and serve them in-game with the built-in offline skin agent. Your skin is yours — edit it, keep it, and it just works.",
+                ]}
+                screenshot={{
+                    src: skins,
+                    alt: "Custom skins screen",
+                    assetHint: "website/assets/skins.png",
+                }}
+            />
+
+            <FeatureRow
+                title="Instance management"
+                paragraphs={[
+                    "Each Minecraft instance gets its own folder with separate mods, resource packs and settings. Switching versions never breaks a world again.",
+                ]}
+                reverse
+                screenshot={{
+                    src: instances,
+                    alt: "Instance management screen",
+                    assetHint: "website/assets/instances.png",
+                }}
+            />
+
+            <FeatureRow
+                title="Lightweight & Customizable"
+                paragraphs={[
+                    "No embedded web browser needed for a game launcher. PollyMC-Continued uses the Qt toolkit, weaving through with low system resources, themes and customization.",
+                ]}
+                screenshot={{
+                    src: appearance,
+                    alt: "Themes and customization screen",
+                    assetHint: "website/assets/appearance.png",
+                }}
+            />
+        </div>
+
+        <div class="infobox top" id="get-involved">
+            <h1>Get involved</h1>
+            <hr />
+            <h2>Discord</h2>
+            <p>To talk directly to us and get involved with development:</p>
+            <p>
+                <a href={links.discord} target="_blank" rel="noopener"
+                    >{links.discord}</a
+                >
+            </p>
+            <h2>Source code</h2>
+            <hr />
+            <p>
+                PollyMC-Continued is focused on user freedom and free
+                redistributability. All code is available on{" "}
+                <a href={links.github} target="_blank" rel="noopener">GitHub</a> under
+                the{" "}
+                <a href={links.license} target="_blank" rel="noopener"
+                    >GPL-3.0 license</a
+                >.
+            </p>
+        </div>
+    </main>
+</Layout>
+
+<script>
+    import "../scripts/reveal.ts";
+</script>
