@@ -1,0 +1,83 @@
+---
+import SocialLinks from "./SocialLinks.astro";
+import { links } from "../lib/site";
+
+interface Props {
+    active?: string;
+}
+
+const { active } = Astro.props;
+
+const items = [
+    { id: "home", label: "Home", href: "/" },
+    { id: "changelog", label: "Changelog", href: "/changelog/" },
+    { id: "about", label: "About", href: "/about/" },
+];
+---
+
+<header class="container">
+    <nav aria-label="Primary">
+        <div class="navbar">
+            <a class="logo" href="/" aria-label="PollyMC-Continued">
+                <svg
+                    viewBox="0 0 256 256"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    aria-hidden="true"
+                >
+                    <path d="M67 127.5V159H130V96H67V127.5Z" fill="black"
+                    ></path>
+                    <path
+                        d="M130 157.5V219H190.008V213.959H251V96H130V157.5Z"
+                        fill="#323232"></path>
+                    <path
+                        d="M5 128.5V222H67V96.6806H251V35H5V128.5Z"
+                        fill="#8ACA00"></path>
+                    <path d="M67 190.5V222H130V159H67V190.5Z" fill="#B0B08C"
+                    ></path>
+                </svg>
+                <span>PollyMC-Continued</span>
+            </a>
+            <ul class="nav">
+                {
+                    items.map((item) => (
+                        <li class="nav-item">
+                            <a
+                                href={item.href}
+                                aria-current={
+                                    active === item.id ? "page" : undefined
+                                }
+                            >
+                                {item.label}
+                            </a>
+                        </li>
+                    ))
+                }
+            </ul>
+        </div>
+        <div class="links">
+            <SocialLinks />
+            <div>
+                {
+                    active === "downloads" ? (
+                        <a class="button" href="/">
+                            Home
+                        </a>
+                    ) : (
+                        <a class="button" href="/downloads/">
+                            Download
+                        </a>
+                    )
+                }
+            </div>
+        </div>
+    </nav>
+</header>
+
+<style>
+    .logo svg {
+        height: 2.4em;
+        width: auto;
+        display: block;
+    }
+</style>

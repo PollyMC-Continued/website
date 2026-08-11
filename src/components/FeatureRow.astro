@@ -1,0 +1,32 @@
+---
+import Screenshot from './Screenshot.astro';
+
+interface ScreenshotProps {
+	src: string;
+	alt: string;
+	assetHint: string;
+}
+
+interface Props {
+	title: string;
+	paragraphs: string[];
+	reverse?: boolean;
+	screenshot: ScreenshotProps;
+}
+
+const { title, paragraphs, reverse = false, screenshot } = Astro.props;
+---
+
+<div class={`row${reverse ? ' row-reverse' : ''}`}>
+	<div class="column">
+		<div class="reveal">
+			<h1>{title}</h1>
+			<div class="feature-subs">
+				{paragraphs.map((p) => <p set:html={p} />)}
+			</div>
+		</div>
+	</div>
+	<div class="column">
+		<Screenshot {...screenshot} />
+	</div>
+</div>

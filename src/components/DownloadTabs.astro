@@ -1,0 +1,81 @@
+---
+import { Image } from 'astro:assets';
+import { findAsset, links, platforms } from '../lib/site';
+import releases from '../data/releases.json';
+
+const version = releases.latest.tag_name;
+const assets = releases.latest.assets;
+---
+
+<ul class="download-tabs" role="tablist">
+	{platforms.map((platform, i) => (
+		<li role="presentation">
+			<a
+				href={`#${platform.id}`}
+				role="tab"
+				id={`tab-${platform.id}`}
+				aria-selected={i === 0 ? 'true' : 'false'}
+				aria-controls={`panel-${platform.id}`}
+			>
+				{platform.name}
+			</a>
+		</li>
+	))}
+</ul>
+
+{platforms.map((platform, i) => (
+	<div
+		class={`download-panel${i === 0 ? '' : ' hidden'}`}
+		id={`panel-${platform.id}`}
+		role="tabpanel"
+		aria-labelledby={`tab-${platform.id}`}
+	>
+		<div class="panel-body">
+			<div class="download-screenshot">
+				<span class="shot-ph">Screenshot coming soon</span>
+				{platform.screenshot && (
+					<>
+						<Image
+							class="shot-bg"
+							src={platform.screenshot}
+							alt=""
+							aria-hidden="true"
+							loading="lazy"
+							decoding="async"
+							onerror="this.remove()"
+						/>
+						<Image
+							class="shot-fg"
+							src={platform.screenshot}
+							alt={`PollyMC-Continued on ${platform.name}`}
+							loading="lazy"
+							decoding="async"
+							onload="this.closest('.download-screenshot').classList.add('has-shot')"
+							onerror="this.remove()"
+						/>
+					</>
+				)}
+			</div>
+			<div class="panel-links">
+				<h2 class="dl-title">{platform.title}</h2>
+				<p class="dl-version">
+					Download PollyMC-Continued <span class="ver">{version}</span>
+				</p>
+				{platform.assets.map((asset) => {
+					const url = findAsset(assets, asset.match);
+					return (
+						<a
+							class={`button dl-button${asset.secondary ? ' secondary' : ''}`}
+							href={url ?? links.releases}
+							target="_blank"
+							rel="noopener"
+						>
+							{asset.label}
+						</a>
+					);
+				})}
+				{platform.note && <small class="dl-note">{platform.note}</small>}
+			</div>
+		</div>
+	</div>
+))}

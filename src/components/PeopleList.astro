@@ -1,0 +1,26 @@
+---
+interface Person {
+	name: string;
+	href: string;
+	avatar: string;
+	role: string;
+}
+
+interface Props {
+	people: Person[];
+}
+
+const { people } = Astro.props;
+---
+
+<ul class="people">
+	{people.map((p) => (
+		<li>
+			<a href={p.href} target="_blank" rel="noopener">
+				<img src={p.avatar} alt={p.name} loading="lazy" />
+				{p.name}
+				<span class="role">{p.role}</span>
+			</a>
+		</li>
+	))}
+</ul>
