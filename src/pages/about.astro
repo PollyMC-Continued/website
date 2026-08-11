@@ -1,0 +1,84 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FeatureRow from '../components/FeatureRow.astro';
+import PeopleList from '../components/PeopleList.astro';
+import { site } from '../lib/site';
+import contributors from '../data/contributors.json';
+import aboutImg from '../assets/about.png';
+import aboutBg from '../assets/aboutbg.webp';
+
+const description = 'About PollyMC-Continued, its maintainers and contributors.';
+
+const maintainers = [
+	{
+		name: 'corecommit',
+		href: 'https://github.com/corecommit',
+		avatar: 'https://avatars.githubusercontent.com/corecommit?s=160',
+		role: 'Owner',
+	},
+	{
+		name: 'namiseeqoe',
+		href: 'https://github.com/namiseeqoe',
+		avatar: 'https://avatars.githubusercontent.com/namiseeqoe?s=160',
+		role: 'Tester',
+  },
+	{
+		name: 'fuis18',
+		href: 'https://github.com/fuis18',
+		avatar: 'https://avatars.githubusercontent.com/fuis18?s=160',
+		role: 'Tester',
+	},
+];
+
+const contributorPeople = contributors.map((c) => ({
+	name: c.login,
+	href: c.html_url,
+	avatar: `${c.avatar_url}?s=160`,
+	role: `${c.contributions} contribution${c.contributions === 1 ? '' : 's'}`,
+}));
+---
+
+<Layout
+	title="About"
+	description={description}
+	canonical={`${site.url}/about/`}
+	background={aboutBg}
+	active="about"
+>
+	<main id="main" class="container">
+		<div class="content">
+			<h1 class="sec-h">About</h1>
+
+			<FeatureRow
+				title="What is PollyMC-Continued?"
+				paragraphs={[
+					'PollyMC-Continued is a free, open-source resurrection of the PollyMC project — a Minecraft launcher forked from Prism Launcher that started with a simple promise: play the game without a Microsoft account.',
+					'Add an offline account and launch the full game with no demo mode and no restrictions — while still supporting normal Microsoft accounts. Custom skins, per-version instances, mods, and a lightweight Qt interface on Windows, Linux and macOS.',
+					'Every line is released under the GPL-3.0 license — focused on user freedom and free redistributability.',
+				]}
+				screenshot={{
+					src: aboutImg,
+					alt: 'PollyMC-Continued launcher',
+					assetHint: 'website/assets/about.png',
+				}}
+			/>
+		</div>
+
+		<div class="infobox">
+			<h1>Maintainers</h1>
+			<PeopleList people={maintainers} />
+		</div>
+
+		<div class="infobox">
+			<h1>Contributors</h1>
+			<p class="feature-subs">
+				{contributors.length} contributor{contributors.length === 1 ? '' : 's'}
+			</p>
+			<PeopleList people={contributorPeople} />
+		</div>
+	</main>
+</Layout>
+
+<script>
+	import '../scripts/reveal.ts';
+</script>

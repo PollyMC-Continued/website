@@ -1,0 +1,31 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ChangelogList from '../components/ChangelogList.astro';
+import { parseChangelog } from '../lib/changelog';
+import { site } from '../lib/site';
+import changelogMd from '../data/changelog.md?raw';
+import changelogBg from '../assets/changelogbg.webp';
+
+const description = 'Release history and changelog for PollyMC-Continued.';
+const blocks = parseChangelog(changelogMd);
+---
+
+<Layout
+	title="Changelog"
+	description={description}
+	canonical={`${site.url}/changelog/`}
+	background={changelogBg}
+	active="changelog"
+>
+	<main id="main" class="container">
+		<div class="content">
+			<h1 class="sec-h">Changelog</h1>
+			<p class="feature-subs">
+				Release notes for PollyMC-Continued, straight from the repository.
+			</p>
+			<div class="changelog">
+				<ChangelogList blocks={blocks} />
+			</div>
+		</div>
+	</main>
+</Layout>
