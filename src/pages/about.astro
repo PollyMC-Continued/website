@@ -3,7 +3,6 @@ import Layout from '../layouts/Layout.astro';
 import FeatureRow from '../components/FeatureRow.astro';
 import PeopleList from '../components/PeopleList.astro';
 import { site } from '../lib/site';
-import contributors from '../data/contributors.json';
 import aboutImg from '../assets/about.png';
 import aboutBg from '../assets/aboutbg.webp';
 
@@ -29,13 +28,6 @@ const maintainers = [
 		role: 'Tester',
 	},
 ];
-
-const contributorPeople = contributors.map((c) => ({
-	name: c.login,
-	href: c.html_url,
-	avatar: `${c.avatar_url}?s=160`,
-	role: `${c.contributions} contribution${c.contributions === 1 ? '' : 's'}`,
-}));
 ---
 
 <Layout
@@ -71,14 +63,13 @@ const contributorPeople = contributors.map((c) => ({
 
 		<div class="infobox">
 			<h1>Contributors</h1>
-			<p class="feature-subs">
-				{contributors.length} contributor{contributors.length === 1 ? '' : 's'}
-			</p>
-			<PeopleList people={contributorPeople} />
+			<p class="feature-subs" id="contributors-count">Loading…</p>
+			<div id="contributors-list"></div>
 		</div>
 	</main>
 </Layout>
 
 <script>
 	import '../scripts/reveal.ts';
+	import '../scripts/contributors.ts';
 </script>

@@ -1,13 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import ChangelogList from '../components/ChangelogList.astro';
-import { parseChangelog } from '../lib/changelog';
 import { site } from '../lib/site';
-import changelogMd from '../data/changelog.md?raw';
 import changelogBg from '../assets/changelogbg.webp';
 
 const description = 'Release history and changelog for PollyMC-Continued.';
-const blocks = parseChangelog(changelogMd);
 ---
 
 <Layout
@@ -24,8 +20,12 @@ const blocks = parseChangelog(changelogMd);
 				Release notes for PollyMC-Continued, straight from the repository.
 			</p>
 			<div class="changelog">
-				<ChangelogList blocks={blocks} />
+				<p class="feature-subs">Loading…</p>
 			</div>
 		</div>
 	</main>
 </Layout>
+
+<script>
+	import '../scripts/changelog.ts';
+</script>

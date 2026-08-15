@@ -1,4 +1,4 @@
-import { releaseTagUrl } from './site';
+import { releaseTagUrl } from './constants';
 
 export interface ChangelogListItem {
 	html: string;

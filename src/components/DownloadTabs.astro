@@ -1,10 +1,6 @@
 ---
 import { Image } from 'astro:assets';
-import { findAsset, links, platforms } from '../lib/site';
-import releases from '../data/releases.json';
-
-const version = releases.latest.tag_name;
-const assets = releases.latest.assets;
+import { links, platforms } from '../lib/site';
 ---
 
 <ul class="download-tabs" role="tablist">
@@ -59,14 +55,14 @@ const assets = releases.latest.assets;
 			<div class="panel-links">
 				<h2 class="dl-title">{platform.title}</h2>
 				<p class="dl-version">
-					Download PollyMC-Continued <span class="ver">{version}</span>
+					Download PollyMC-Continued <span class="ver">latest</span>
 				</p>
 				{platform.assets.map((asset) => {
-					const url = findAsset(assets, asset.match);
 					return (
 						<a
 							class={`button dl-button${asset.secondary ? ' secondary' : ''}`}
-							href={url ?? links.releases}
+							href={links.releases}
+							data-match={asset.match}
 							target="_blank"
 							rel="noopener"
 						>

@@ -2,28 +2,14 @@ import type { ImageMetadata } from 'astro';
 import windowsImg from '../assets/windows.png';
 import linuxImg from '../assets/linux.png';
 
+export { github, links, releaseTagUrl } from './constants';
+
 export const site = {
 	name: 'PollyMC-Continued',
 	// TODO: replace when the new domain is configured
 	url: 'https://pollymc.vercel.app',
 	backgroundImage: 'https://pollymc.vercel.app/background.png',
 };
-
-export const github = {
-	owner: 'corecommit',
-	repo: 'PollyMC-Continued',
-};
-
-export const links = {
-	discord: 'https://discord.gg/FsM3JNTN9z',
-	github: `https://github.com/${github.owner}/${github.repo}`,
-	license: `https://github.com/${github.owner}/${github.repo}/blob/main/LICENSE`,
-	releases: `https://github.com/${github.owner}/${github.repo}/releases`,
-};
-
-export function releaseTagUrl(tag: string): string {
-	return `${links.releases}/tag/${tag}`;
-}
 
 export interface AssetPattern {
 	/** Substring used to match a release asset by name. */
@@ -73,11 +59,3 @@ export const platforms: Platform[] = [
 		],
 	},
 ];
-
-export function findAsset(
-	assets: { name: string; browser_download_url: string }[],
-	pattern: string,
-): string | null {
-	const asset = assets.find((a) => a.name.includes(pattern));
-	return asset ? asset.browser_download_url : null;
-}

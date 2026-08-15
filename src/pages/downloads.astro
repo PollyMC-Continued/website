@@ -2,10 +2,8 @@
 import Layout from '../layouts/Layout.astro';
 import DownloadTabs from '../components/DownloadTabs.astro';
 import { site } from '../lib/site';
-import releases from '../data/releases.json';
 
 const description = 'Download PollyMC-Continued for Windows, Linux and macOS.';
-const total = releases.totalDownloads.toLocaleString();
 ---
 
 <Layout
@@ -19,7 +17,7 @@ const total = releases.totalDownloads.toLocaleString();
 			<div class="downloads-head">
 				<h1 class="sec-h">Downloads</h1>
 				<p class="downloads-total" aria-live="polite">
-					<span class="num">{total}</span>
+					<span class="num">…</span>
 					<span class="label">total downloads across all releases</span>
 				</p>
 			</div>
@@ -31,4 +29,5 @@ const total = releases.totalDownloads.toLocaleString();
 
 <script>
 	import '../scripts/tabs.ts';
+	import '../scripts/downloads.ts';
 </script>
