@@ -58,7 +58,7 @@ h2 {
     max-width: 90em;
     margin: 0 auto;
     position: relative;
-    padding: 0 1em;
+    padding: 0 10em;
 }
 .skip-link {
     position: absolute;
@@ -81,7 +81,7 @@ header nav {
     justify-content: center;
     gap: 1em;
     background: #333333;
-    border-radius: 1em;
+    border-radius: 8px;
     margin: 1em 0;
     padding: 1em 1.5em;
 }
@@ -189,7 +189,7 @@ header nav {
     background-color: var(--primary);
     background-image: var(--grad-primary);
     background-size: 200%;
-    border-radius: 0.4em;
+    border-radius: 5px;
     transition: 250ms ease;
     background-position-x: 100%;
 }
@@ -305,7 +305,7 @@ main {
 /* ---------- content cards ---------- */
 .content {
     background-color: var(--background);
-    border-radius: 1em;
+    border-radius: 8px;
     padding: 2em;
     backdrop-filter: blur(10px);
     h1 {
@@ -320,7 +320,7 @@ h1.sec-h {
 .infobox {
     background-color: var(--background);
     padding: .75em 1.5em;
-    border-radius: 1em;
+    border-radius: 8px;
     margin-top: 1.5em;
     h1 {
         font-size: 1.9em;
@@ -547,7 +547,7 @@ hr {
     padding: 1.25em;
     text-align: center;
     background-color: var(--accent);
-    border-radius: 1em;
+    border-radius: 8px;
 }
 .card h3 {
     margin: 0.2em 0 0.4em;
@@ -572,7 +572,7 @@ hr {
 /* ---------- changelog ---------- */
 .changelog {
     background-color: var(--background);
-    border-radius: 1em;
+    border-radius: 8px;
     padding: 1em 1.5em;
     h2 {
         font-size: 1.6em;
@@ -632,7 +632,7 @@ hr {
         flex: 0 0 auto;
         text-align: center;
         background-color: var(--accent);
-        border-radius: 1em;
+        border-radius: 8px;
         padding: 1em 0.75em;
         min-width: 130px;
     }
