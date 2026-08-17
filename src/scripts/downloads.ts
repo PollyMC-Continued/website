@@ -51,7 +51,12 @@ function apply(latest: Latest, totalDownloads: number): void {
 	document.querySelectorAll<HTMLAnchorElement>('a.dl-button[data-match]').forEach((a) => {
 		const match = a.dataset.match;
 		const asset = (latest.assets || []).find((x) => x.name.includes(match || ''));
-		if (asset) a.href = asset.browser_download_url;
+		if (asset) {
+			a.href = asset.browser_download_url;
+			a.classList.remove('hidden');
+		} else {
+			a.classList.add('hidden');
+		}
 	});
 
 	const num = document.querySelector<HTMLElement>('.downloads-total .num');

@@ -207,13 +207,33 @@ header nav {
 
 /* download buttons: same shape as the rest of the site, just bigger and full-width */
 .dl-button {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
     width: 100%;
     text-align: center;
     font-size: 1.3em;
     font-weight: 700;
     padding: 0.85em 1.5em;
     margin: 0.35em 0;
+}
+.dl-button-icon,
+.dl-button-download {
+    display: flex;
+    flex-shrink: 0;
+}
+.dl-button-icon svg,
+.dl-button-download svg {
+    width: 1.1em;
+    height: 1.1em;
+    display: block;
+}
+.dl-button-download {
+    margin-left: 0.15em;
+}
+.dl-button.hidden {
+    display: none;
 }
 
 /* ---------- background ---------- */
@@ -393,55 +413,66 @@ hr {
     margin-top: 0.35em;
 }
 
-/* ---------- download tabs ---------- */
+.download-tabs-wrap {
+    background-color: var(--accent);
+    border-radius: 8px;
+    padding: 0.4em;
+    margin: 1em 0 0;
+}
 .download-tabs {
     list-style: none;
     display: flex;
     justify-content: flex-start;
     flex-wrap: wrap;
+    gap: 0.5em;
     padding: 0;
-    margin: 1em 0 0;
-    border-radius: 1em 1em 0 0;
-    background-color: var(--accent);
-    overflow: hidden;
+    margin: 0;
 }
 .download-tabs li {
-    flex-grow: 1;
-    text-align: center;
+    flex: 1 1 auto;
 }
 .download-tabs a {
-    display: block;
-    position: relative;
-    padding: 0.75em 0.5em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35em;
+    padding: 0.65em 1.35em;
+    border-radius: 5px;
     color: var(--primary-text);
-    font-size: 1.2em;
     text-decoration: none;
-    opacity: 0.75;
+    opacity: 0.65;
     transition:
         opacity 150ms ease,
-        background-color 150ms ease;
+        background-color 150ms ease,
+        border-color 150ms ease;
+}
+.download-tabs .tab-icon {
+    width: 1.9em;
+    height: 1.9em;
+}
+.download-tabs .tab-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.download-tabs .tab-label {
+    font-size: 0.9em;
+    font-weight: 600;
 }
 .download-tabs a:hover {
     background-color: var(--accent-light);
-    opacity: 0.95;
+    opacity: 0.9;
 }
 .download-tab-active a {
     background-color: var(--background);
-    font-weight: 700;
+    border-color: var(--primary);
     opacity: 1;
-}
-.download-tab-active a::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 0.2em;
-    background: var(--primary);
 }
 .download-panel {
     background-color: var(--background);
-    border-radius: 0 0 1em 1em;
+    border-radius: 8px;
+    margin-top: 0.75em;
     padding: 1em;
     display: flex;
     flex-direction: column;
@@ -522,13 +553,13 @@ hr {
     .download-panel .panel-body {
         flex-direction: row-reverse;
         justify-content: center;
-        align-items: center;
+        /* align-items: center; */
         gap: 2.5em;
     }
     .download-panel .panel-links {
         flex: 1;
         max-width: 24em;
-        align-items: flex-start;
+        /* align-items: flex-start; */
         text-align: left;
     }
     .download-screenshot {

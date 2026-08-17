@@ -1,23 +1,36 @@
 ---
 import { Image } from 'astro:assets';
 import { links, platforms } from '../lib/site';
+import windowsIcon from '../icons/windows.svg?raw';
+import macosIcon from '../icons/macos.svg?raw';
+import linuxIcon from '../icons/linux.svg?raw';
+import downloadIcon from '../icons/download.svg?raw';
+
+const icons: Record<string, string> = {
+	windows: windowsIcon,
+	macos: macosIcon,
+	linux: linuxIcon,
+};
 ---
 
-<ul class="download-tabs" role="tablist">
-	{platforms.map((platform, i) => (
-		<li role="presentation">
-			<a
-				href={`#${platform.id}`}
-				role="tab"
-				id={`tab-${platform.id}`}
-				aria-selected={i === 0 ? 'true' : 'false'}
-				aria-controls={`panel-${platform.id}`}
-			>
-				{platform.name}
-			</a>
-		</li>
-	))}
-</ul>
+<div class="download-tabs-wrap">
+	<ul class="download-tabs" role="tablist">
+		{platforms.map((platform, i) => (
+			<li role="presentation" class={i === 0 ? 'download-tab-active' : ''}>
+				<a
+					href={`#${platform.id}`}
+					role="tab"
+					id={`tab-${platform.id}`}
+					aria-selected={i === 0 ? 'true' : 'false'}
+					aria-controls={`panel-${platform.id}`}
+				>
+					<span class="tab-icon" set:html={icons[platform.id]} />
+					<span class="tab-label">{platform.name}</span>
+				</a>
+			</li>
+		))}
+	</ul>
+</div>
 
 {platforms.map((platform, i) => (
 	<div
@@ -66,7 +79,9 @@ import { links, platforms } from '../lib/site';
 							target="_blank"
 							rel="noopener"
 						>
-							{asset.label}
+							<span class="dl-button-icon" set:html={icons[platform.id]} />
+							<span class="dl-button-label">{asset.label}</span>
+							<span class="dl-button-download" set:html={downloadIcon} />
 						</a>
 					);
 				})}
