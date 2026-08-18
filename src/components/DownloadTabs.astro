@@ -76,8 +76,6 @@ const icons: Record<string, string> = {
 							class={`button dl-button${asset.secondary ? ' secondary' : ''}`}
 							href={links.releases}
 							data-match={asset.match}
-							target="_blank"
-							rel="noopener"
 						>
 							<span class="dl-button-icon" set:html={icons[platform.id]} />
 							<span class="dl-button-label">{asset.label}</span>
