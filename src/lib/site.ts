@@ -55,7 +55,7 @@ export const platforms: Platform[] = [
 		screenshot: linuxImg,
 		title: 'Linux Download',
 		assets: [
-			{ match: '-Linux-x86_64.AppImage', label: 'AppImage' },
+			{ match: '-x86_64.AppImage', label: 'AppImage' },
 			{ match: '-Linux-x86_64.deb', label: 'Debian Package (.deb)'},
 			{ match: '-Linux-x86_64.tar.gz', label: 'Tar Archive (.tar.gz)', secondary: true },
 		],
