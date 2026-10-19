@@ -1,0 +1,49 @@
+---
+/**
+ * Analytics + heatmaps.
+ *
+ *  - Vercel Web Analytics: page views, referrers, countries, devices (cookieless).
+ *    Requires "Web Analytics" to be enabled in the Vercel project dashboard.
+ *  - Microsoft Clarity: heatmaps (click + scroll), session recordings and
+ *    dashboards. Requires PUBLIC_CLARITY_ID (the project ID from clarity.microsoft.com).
+ *
+ * Both only load in production builds, so local dev doesn't pollute your data.
+ */
+const clarityId = import.meta.env.PUBLIC_CLARITY_ID;
+const enabled = import.meta.env.PROD;
+---
+
+{enabled && (
+	<>
+		<script is:inline>
+			window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+		</script>
+		<script is:inline defer src="/_vercel/insights/script.js"></script>
+	</>
+)}
+
+{enabled && clarityId && (
+	<script is:inline define:vars={{ clarityId }}>
+		(function (c, l, a, r, i, t, y) {
+			c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+			t = l.createElement(r); t.async = 1; t.src = 'https://www.clarity.ms/tag/' + i;
+			y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+		})(window, document, 'clarity', 'script', clarityId);
+	</script>
+)}
+
+{enabled && (
+	<script is:inline>
+		// Custom event: download button clicks (buttons are filled in by downloads.ts).
+		document.addEventListener('click', function (e) {
+			var a = e.target instanceof Element ? e.target.closest('a.dl-button') : null;
+			if (!a) return;
+			var asset = a.dataset.match || 'unknown';
+			if (typeof window.va === 'function') window.va('event', { name: 'download', data: { asset: asset } });
+			if (typeof window.clarity === 'function') {
+				window.clarity('event', 'download');
+				window.clarity('set', 'download_asset', asset);
+			}
+		});
+	</script>
+)}
