@@ -4,6 +4,7 @@ import type { ImageMetadata } from 'astro';
 import '../styles/global.css';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
+import Analytics from '../components/Analytics.astro';
 import backgroundImg from '../assets/background.webp';
 
 interface Props {
@@ -55,6 +56,7 @@ const fullTitle = `${title} - PollyMC-Continued`;
 			</>
 		)}
 		{noindex && <meta name="robots" content="noindex" />}
+		<Analytics />
 	</head>
 	<body>
 		<a class="skip-link" href="#main">Skip to content</a>
