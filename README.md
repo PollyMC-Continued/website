@@ -68,11 +68,3 @@ Please keep PRs focused — one fix or feature per PR.
 The website source code is licensed under the **GNU General Public License v3.0**. See [LICENSE](./LICENSE) for the full text.
 
 PollyMC-Continued is not affiliated with Mojang Studios, Microsoft, PolyMC, or Prism Launcher. Minecraft is a trademark of Mojang Studios.
-
----
-
-## Analytics & Heatmaps
-
-- **Vercel Web Analytics** (page views, referrers, devices; cookieless): enable it under *Project → Analytics* in the Vercel dashboard. No code changes needed.
-- **Microsoft Clarity** (click/scroll heatmaps, session recordings): create a project at [clarity.microsoft.com](https://clarity.microsoft.com), then set `PUBLIC_CLARITY_ID` in Vercel (*Settings → Environment Variables*) and redeploy. See `.env.example`.
-- Both load only in production builds. Code lives in `src/components/Analytics.astro`. Download button clicks are tracked as a `download` event.
