@@ -1,6 +1,8 @@
 import type { ImageMetadata } from 'astro';
 import windowsImg from '../assets/windows.png';
 import linuxImg from '../assets/linux.png';
+import macosImg from '../assets/macos.png';
+
 
 export { github, links, releaseTagUrl } from './constants';
 
@@ -42,6 +44,7 @@ export const platforms: Platform[] = [
 	{
 		id: 'macos',
 		name: 'macOS',
+		screenshot: macosImg,
 		title: 'macOS Download',
 		assets: [
 			{ match: '-macOS-arm64.dmg', label: 'Disk Image (.dmg)' },
