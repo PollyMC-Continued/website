@@ -1,6 +1,6 @@
 export const github = {
-	owner: 'corecommit',
-	repo: 'PollyMC-Continued',
+	owner: 'PollyMC-Continued',
+	repo: 'launcher',
 };
 
 export const links = {
