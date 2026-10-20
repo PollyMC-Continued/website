@@ -17,8 +17,9 @@ function escapeHtml(s: string): string {
 
 function inline(s: string): string {
 	return s
-		.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-		.replace(/`([^`]+)`/g, '<code>$1</code>');
+		.replace(/``\s*(.+?)\s*``/g, '<code>$1</code>')
+		.replace(/`([^`]+)`/g, '<code>$1</code>')
+		.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 }
 
 function sectionClass(label: string): string {
@@ -46,12 +47,15 @@ function markerClass(item: string): { rest: string; cls: string } {
 export function parseChangelog(md: string): ChangelogBlock[] {
 	const lines = md.replace(/\r/g, '').split('\n');
 	const blocks: ChangelogBlock[] = [];
-	let list: ChangelogListItem[] = [];
+	let list: { raw: string; cls: string }[] = [];
 	let listCls = '';
 
 	function closeList() {
 		if (list.length) {
-			blocks.push({ type: 'list', items: list });
+			blocks.push({
+				type: 'list',
+				items: list.map((i) => ({ html: inline(escapeHtml(i.raw)), cls: i.cls })),
+			});
 			list = [];
 			listCls = '';
 		}
@@ -93,7 +97,13 @@ export function parseChangelog(md: string): ChangelogBlock[] {
 			item = marker.rest;
 			const cls = marker.cls || listCls;
 			if (marker.cls) listCls = marker.cls;
-			list.push({ html: inline(escapeHtml(item)), cls });
+			list.push({ raw: item, cls });
+			continue;
+		}
+
+		// Hard-wrapped continuation line of the previous list item
+		if (list.length) {
+			list[list.length - 1].raw += ' ' + t;
 			continue;
 		}
 

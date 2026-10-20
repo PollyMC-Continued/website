@@ -717,6 +717,9 @@ body.star-toast-open {
         left: 0;
         color: var(--primary);
     }
+    code {
+        overflow-wrap: anywhere;
+    }
     .tag {
         font-weight: 700;
     }
