@@ -53,21 +53,6 @@ This repository contains only the **website source**. For the launcher itself, s
 
 `api/report.js` receives reports from the launcher (`POST /api/report`, JSON) and posts them to a private Discord channel as an embed, with screenshots and the log attached. The webhook URL never ships in the launcher; it lives in Vercel environment variables:
 
-| Name | Value |
-| --- | --- |
-| `DISCORD_WEBHOOK_URL` | Discord webhook URL (required) |
-| `DISCORD_FORUM` | `1` if the webhook belongs to a forum channel (one thread per report) |
-| `DISCORD_PING_ROLE_ID` | role id to ping on each report (optional) |
-| `REPORT_EMBED_URL` | where the embed title links to (optional) |
-
-Env changes only apply after a redeploy. Test with:
-
-```sh
-curl -X POST https://pollymc.vercel.app/api/report \
-  -H 'Content-Type: application/json' \
-  -d '{"type":"bug","name":"test","description":"Testing the report bot, please ignore.","launcherVersion":"9.4.1"}'
-```
-
 A `201 {"ok":true,...}` answer means the message reached Discord. Add a Vercel Firewall rate-limit rule on `/api/report` to keep spam out.
 
 ---
