@@ -53,8 +53,6 @@ This repository contains only the **website source**. For the launcher itself, s
 
 `api/report.js` receives reports from the launcher (`POST /api/report`, JSON) and posts them to a private Discord channel as an embed, with screenshots and the log attached. The webhook URL never ships in the launcher; it lives in Vercel environment variables:
 
-A `201 {"ok":true,...}` answer means the message reached Discord. Add a Vercel Firewall rate-limit rule on `/api/report` to keep spam out.
-
 ---
 
 ## Translations
