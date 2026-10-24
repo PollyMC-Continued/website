@@ -1,19 +1,19 @@
 // PollyMC-Continued bug report relay (Vercel serverless function, ES module).
-// Receives a report from the launcher's "Report a Bug" dialog and posts it to a private Discord channel
-// through a webhook. The webhook URL stays in an environment variable and never ships inside the launcher.
+// Receives a report from the launcher's "Report a Bug" dialog and posts it as a plain message (no embed) through a
+// Discord webhook. With a forum channel every report becomes its own thread titled "Bug: ...", "Suggestion: ...", etc.
+// The webhook URL stays in an environment variable and never ships inside the launcher.
 //
 // Env vars:
-//   DISCORD_WEBHOOK_URL   required. Channel > Edit > Integrations > Webhooks > Copy Webhook URL
+//   DISCORD_WEBHOOK_URL   required. Forum channel > Edit > Integrations > Webhooks > Copy Webhook URL
 //   DISCORD_FORUM         "1" if the webhook belongs to a *forum* channel: every report becomes its own thread
 //   DISCORD_PING_ROLE_ID  optional role id to ping on every report (the only mention the bot is allowed to make)
-//   REPORT_EMBED_URL      optional link the embed title points at (default: the launcher repo)
 
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || '';
 const FORUM = process.env.DISCORD_FORUM === '1';
 const PING_ROLE = /^\d{5,25}$/.test(process.env.DISCORD_PING_ROLE_ID || '') ? process.env.DISCORD_PING_ROLE_ID : '';
-const EMBED_URL = process.env.REPORT_EMBED_URL || 'https://github.com/PollyMC-Continued/launcher';
 
 const MAX_DESCRIPTION = 4000;
+const MESSAGE_LIMIT = 1900; // Discord caps a message at 2000 characters; follow-ups keep some headroom
 const MIN_DESCRIPTION = 10;
 const MAX_NAME = 40;
 const MAX_CONTACT = 80;
@@ -22,10 +22,10 @@ const MAX_SHOT_BYTES = 1.5 * 1024 * 1024;
 const MAX_LOG_CHARS = 200000;
 
 const TYPES = {
-  bug: { label: 'Bug', emoji: '\u{1F41E}', color: 0xe74c3c },
-  crash: { label: 'Crash', emoji: '\u{1F4A5}', color: 0x992d22 },
-  feature: { label: 'Suggestion', emoji: '\u{1F4A1}', color: 0x3498db },
-  other: { label: 'Other', emoji: '\u{1F4AC}', color: 0x95a5a6 },
+  bug: { label: 'Bug' },
+  crash: { label: 'Crash' },
+  feature: { label: 'Suggestion' },
+  other: { label: 'Other' },
 };
 
 // Best-effort rate limit. Serverless instances don't share memory, so this only slows down
@@ -62,13 +62,34 @@ function clip(text, max) {
   return text.length > max ? `${text.slice(0, max - 1)}\u2026` : text;
 }
 
-function webhookEndpoint() {
+// Name and contact are typed by the user; stop them from turning into bold/italic/spoilers in the report.
+function escapeMd(text) {
+  return text.replace(/([\\*_~|>])/g, '\\$1');
+}
+
+// Split long text on line/word boundaries so every piece fits in one Discord message.
+function splitText(text, max) {
+  const parts = [];
+  let rest = text;
+  while (rest.length > max) {
+    let cut = rest.lastIndexOf('\n', max);
+    if (cut < max / 2) cut = rest.lastIndexOf(' ', max);
+    if (cut < max / 2) cut = max;
+    parts.push(rest.slice(0, cut).trimEnd());
+    rest = rest.slice(cut).trimStart();
+  }
+  if (rest) parts.push(rest);
+  return parts;
+}
+
+function webhookEndpoint(threadId) {
   const url = new URL(WEBHOOK_URL);
   url.searchParams.set('wait', 'true'); // makes Discord return the created message, so we know it really worked
+  if (threadId) url.searchParams.set('thread_id', threadId); // post into an existing forum thread
   return url.toString();
 }
 
-async function postToDiscord(payload, files) {
+async function postToDiscord(payload, files = [], threadId = '') {
   const build = () => {
     const form = new FormData();
     form.append('payload_json', JSON.stringify(payload));
@@ -77,7 +98,7 @@ async function postToDiscord(payload, files) {
   };
 
   for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await fetch(webhookEndpoint(), { method: 'POST', body: build() });
+    const res = await fetch(webhookEndpoint(threadId), { method: 'POST', body: build() });
     if (res.status === 429 && attempt === 0) {
       // Discord rate limit: wait the advertised time (capped) and try once more.
       const data = await res.json().catch(() => ({}));
@@ -146,41 +167,55 @@ export default async function handler(req, res) {
   if (log) files.push({ name: 'launcher-log.txt', type: 'text/plain', data: Buffer.from(log, 'utf8') });
 
   const firstLine = oneLine(description.split(/\r?\n/)[0], 80);
-  const fields = [
-    { name: 'Type', value: meta.label, inline: true },
-    { name: 'Reported by', value: name, inline: true },
-    ...(contact ? [{ name: 'Contact', value: contact, inline: true }] : []),
-    { name: 'Launcher', value: `${version} (${platform})`, inline: true },
-    { name: 'System', value: system, inline: true },
-    { name: 'CPU / Qt', value: `${arch} / Qt ${qt}`, inline: true },
-  ];
 
-  // Embeds that share the same url are shown by Discord as one gallery, so every screenshot lands inside the report.
-  const embeds = [
-    {
-      title: clip(`${meta.emoji} ${firstLine}`, 250),
-      url: EMBED_URL,
-      description: description,
-      color: meta.color,
-      fields,
-      footer: { text: log ? 'Launcher log attached' : 'No launcher log attached' },
-      timestamp: new Date().toISOString(),
-      ...(shotCount ? { image: { url: 'attachment://screenshot-1.jpg' } } : {}),
-    },
-  ];
-  for (let i = 2; i <= shotCount; i++) embeds.push({ url: EMBED_URL, image: { url: `attachment://screenshot-${i}.jpg` } });
+  // Plain message, no embed. Example:
+  //   **Name:** Anonymous
+  //   **Contact:** Didn't leave one
+  //   **Launcher:** 9.4.1 (windows) | **System:** Windows 11 | **CPU / Qt:** x86_64 / Qt 6.8
+  //   **Attached:** 2 screenshots, launcher log
+  const attached = [
+    shotCount ? `${shotCount} screenshot${shotCount === 1 ? '' : 's'}` : '',
+    log ? 'launcher log' : '',
+  ].filter(Boolean);
+  const header = [
+    `**Name:** ${escapeMd(name)}`,
+    `**Contact:** ${contact ? escapeMd(contact) : "Didn't leave one"}`,
+    `**Launcher:** ${version} (${platform})`,
+    `**System:** ${system}`,
+    `**CPU / Qt:** ${arch} / Qt ${qt}`,
+    `**Attached:** ${attached.length ? attached.join(', ') : 'nothing'}`,
+    '',
+    '**Description**',
+  ].join('\n');
+
+  // The first message carries the header, as much of the description as fits, and the attachments.
+  // Whatever does not fit goes into follow-up messages in the same thread.
+  const pingLine = PING_ROLE ? `<@&${PING_ROLE}> new ${meta.label.toLowerCase()} report\n` : '';
+  const room = 1990 - pingLine.length - header.length - 1;
+  const firstPart = splitText(description, room)[0];
+  const first = `${header}\n${firstPart}`;
+  const pieces = splitText(description.slice(firstPart.length).trimStart(), MESSAGE_LIMIT);
 
   const payload = {
     username: 'PollyMC Reports',
-    embeds,
+    content: clip(pingLine + first, 2000),
+    flags: 4, // SUPPRESS_EMBEDS: links the user typed do not unfurl into previews
     // Nothing the user typed may ping anybody. Only the configured role (if any) is allowed through.
     allowed_mentions: PING_ROLE ? { parse: [], roles: [PING_ROLE] } : { parse: [] },
   };
-  if (PING_ROLE) payload.content = `<@&${PING_ROLE}> new ${meta.label.toLowerCase()} report`;
   if (FORUM) payload.thread_name = clip(`${meta.label}: ${firstLine}`, 100);
 
   try {
     const message = await postToDiscord(payload, files);
+    // In a forum the created message lives in the new thread, whose id is the message's channel_id.
+    const threadId = FORUM ? message.channel_id : '';
+    for (const piece of pieces) {
+      await postToDiscord(
+        { username: payload.username, content: clip(piece, 2000), flags: 4, allowed_mentions: { parse: [] } },
+        [],
+        threadId
+      );
+    }
     return res.status(201).json({ ok: true, id: message.id });
   } catch (err) {
     console.error(err.message);
