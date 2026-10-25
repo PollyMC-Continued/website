@@ -1,0 +1,229 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { site, links } from '../lib/site';
+import aboutBg from '../assets/aboutbg.webp';
+
+const description =
+	'How to stop antivirus software, Windows Defender and ransomware protection from blocking PollyMC-Continued downloads ("Permission denied" errors).';
+---
+
+<Layout
+	title="Antivirus Guide"
+	description={description}
+	canonical={`${site.url}/antivirus/`}
+	background={aboutBg}
+>
+	<main id="main" class="container">
+		<div class="content">
+			<h1 class="sec-h">Antivirus Guide</h1>
+			<div class="feature-subs">
+				<p>
+					Sometimes antivirus software, Windows ransomware protection or a cloud-sync
+					client blocks PollyMC-Continued while it writes game files. When that
+					happens, downloads fail with <code>Permission denied</code> and the launcher shows
+					the network error window. This page shows how to fix it.
+				</p>
+			</div>
+			<nav class="guide-toc" aria-label="On this page">
+				<a href="#quick-fix">Quick fix</a>
+				<a href="#defender">Windows Defender</a>
+				<a href="#ransomware">Ransomware protection</a>
+				<a href="#other-av">Other antivirus</a>
+				<a href="#still-failing">Still failing?</a>
+			</nav>
+		</div>
+
+		<div class="infobox guide reveal" id="quick-fix">
+			<h1>Quick fix: use another temporary folder</h1>
+			<p>
+				Does the error window say <em>"This looks like antivirus software…"</em>? You can
+				retry without touching your antivirus settings:
+			</p>
+			<ol>
+				<li>In the error window, choose the option to retry through a different temporary folder.</li>
+				<li>
+					Pick a folder your antivirus does not watch, such as a folder in your home
+					directory.
+				</li>
+				<li>The failed downloads run again and are staged in that folder.</li>
+			</ol>
+			<p class="guide-note">
+				If this works, you are done. If you keep seeing the same error, add exclusions using the steps below.
+			</p>
+		</div>
+
+		<div class="infobox guide reveal" id="defender">
+			<h1>Windows Defender exclusions</h1>
+			<p>
+				Exclude both the launcher folder and its data folder, so Defender stops scanning
+				files while they are being written.
+			</p>
+			<ol>
+				<li>Open <strong>Windows Security</strong> from the Start menu.</li>
+				<li>Go to <strong>Virus &amp; threat protection</strong>, then under <em>Virus &amp; threat protection settings</em> click <strong>Manage settings</strong>.</li>
+				<li>Scroll down to <strong>Exclusions</strong> and click <strong>Add or remove exclusions</strong>.</li>
+				<li>Click <strong>Add an exclusion</strong> → <strong>Folder</strong> and add each folder from the table below.</li>
+			</ol>
+
+			<div class="guide-table-wrap">
+				<table class="guide-table">
+					<thead>
+						<tr><th>What</th><th>Default location</th></tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Installed launcher (installer)</td>
+							<td><code>C:\Program Files\PollyMC-Continued</code></td>
+						</tr>
+						<tr>
+							<td>Launcher data (instances, mods, settings)</td>
+							<td><code>%APPDATA%\PollyMC</code></td>
+						</tr>
+						<tr>
+							<td>Portable version</td>
+							<td>The folder you extracted the <code>.zip</code> into</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<p class="guide-note">
+				Tip: paste <code>%APPDATA%\PollyMC</code> into the File Explorer address bar to jump straight to the data folder.
+			</p>
+		</div>
+
+		<div class="infobox guide reveal" id="ransomware">
+			<h1>Ransomware protection (Controlled folder access)</h1>
+			<p>
+				If you use Controlled folder access, Windows can block <code>pollymc.exe</code> from
+				writing into protected folders such as Documents, even when Defender exclusions are set.
+				Allow the launcher through it:
+			</p>
+			<ol>
+				<li>Open <strong>Windows Security</strong> → <strong>Virus &amp; threat protection</strong>.</li>
+				<li>Under <em>Ransomware protection</em>, click <strong>Manage ransomware protection</strong>.</li>
+				<li>Click <strong>Allow an app through Controlled folder access</strong>.</li>
+				<li>Choose <strong>Add an allowed app</strong> → <strong>Browse all apps</strong> and select <code>pollymc.exe</code> from the launcher folder.</li>
+			</ol>
+		</div>
+
+		<div class="infobox guide reveal" id="other-av">
+			<h1>Other antivirus programs</h1>
+			<p>
+				Every antivirus names things differently, but the idea is the same. Look for a setting called
+				<strong>Exclusions</strong>, <strong>Exceptions</strong>, <strong>Trusted applications</strong> or
+				<strong>Allow list</strong>, then add:
+			</p>
+			<ul>
+				<li>The launcher folder, or at least <code>pollymc.exe</code></li>
+				<li>The launcher data folder (<code>%APPDATA%\PollyMC</code>)</li>
+				<li>Your Minecraft/Java folders, if the program also blocks the game itself</li>
+			</ul>
+			<p>
+				Cloud-sync clients (OneDrive, Dropbox, Google Drive) can also lock files. If your launcher
+				data lives inside a synced folder, move it out or pause syncing while downloading.
+			</p>
+		</div>
+
+		<div class="infobox guide reveal" id="still-failing">
+			<h1>Still not working?</h1>
+			<p>
+				Make sure the launcher is installed from the official <a href="/downloads/">downloads page</a>,
+				then restart it and retry the download. If the error keeps coming back, tell us:
+			</p>
+			<ul>
+				<li>Ask in our <a href={links.discord} rel="noopener">Discord server</a>.</li>
+				<li>Or open an issue on <a href={links.github} rel="noopener">GitHub</a> and include the launcher log.</li>
+			</ul>
+			<p>
+				<a class="button is-big" href="/downloads/">Back to Downloads</a>
+			</p>
+		</div>
+	</main>
+</Layout>
+
+<style>
+	.guide-toc {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5em;
+		margin-top: 1em;
+	}
+	.guide-toc a {
+		background: var(--accent);
+		border-radius: 8px;
+		padding: 0.4em 0.9em;
+		text-decoration: none;
+		color: var(--primary-text);
+		font-size: 0.95em;
+		transition: background 0.15s ease;
+	}
+	.guide-toc a:hover,
+	.guide-toc a:focus {
+		background: var(--accent-light);
+	}
+	.guide {
+		scroll-margin-top: 1em;
+		padding-bottom: 1.25em;
+	}
+	.guide p,
+	.guide li {
+		font-size: 1.1em;
+		line-height: 1.6;
+		opacity: 0.92;
+	}
+	.guide ol,
+	.guide ul {
+		padding-left: 1.4em;
+		margin: 0.6em 0;
+	}
+	.guide li {
+		padding: 0.2em 0;
+	}
+	.guide li::marker {
+		color: var(--primary);
+		font-weight: 700;
+	}
+	.guide code,
+	.content code {
+		background: var(--code);
+		border-radius: 4px;
+		padding: 0.1em 0.4em;
+		font-size: 0.9em;
+		overflow-wrap: anywhere;
+	}
+	.guide-note {
+		background: var(--accent);
+		border-left: 3px solid var(--primary);
+		border-radius: 4px;
+		padding: 0.6em 1em;
+		font-size: 1em !important;
+	}
+	.guide-table-wrap {
+		overflow-x: auto;
+		margin: 1em 0;
+	}
+	.guide-table {
+		width: 100%;
+		border-collapse: collapse;
+		background: var(--accent);
+		border-radius: 8px;
+		overflow: hidden;
+	}
+	.guide-table th,
+	.guide-table td {
+		text-align: left;
+		padding: 0.7em 1em;
+		border-bottom: 1px solid var(--accent-light);
+	}
+	.guide-table th {
+		color: var(--primary);
+		font-weight: 700;
+	}
+	.guide-table tr:last-child td {
+		border-bottom: none;
+	}
+</style>
+
+<script>
+	import '../scripts/reveal.ts';
+</script>
