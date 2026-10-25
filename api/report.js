@@ -4,13 +4,27 @@
 // The webhook URL stays in an environment variable and never ships inside the launcher.
 //
 // Env vars:
-//   DISCORD_WEBHOOK_URL   required. Forum channel > Edit > Integrations > Webhooks > Copy Webhook URL
-//   DISCORD_FORUM         "1" if the webhook belongs to a *forum* channel: every report becomes its own thread
+//   DISCORD_WEBHOOK_URL   required. Channel > Edit > Integrations > Webhooks > Copy Webhook URL
+//   DISCORD_FORUM         optional. "1"/"true" = webhook belongs to a forum channel, "0"/"false" = normal text channel.
+//                         Leave it unset and the relay detects the channel type by itself (see sendReport).
 //   DISCORD_PING_ROLE_ID  optional role id to ping on every report (the only mention the bot is allowed to make)
 
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || '';
-const FORUM = process.env.DISCORD_FORUM === '1';
 const PING_ROLE = /^\d{5,25}$/.test(process.env.DISCORD_PING_ROLE_ID || '') ? process.env.DISCORD_PING_ROLE_ID : '';
+
+// true = forum channel, false = normal channel, null = not known yet (auto-detect on the first report).
+// Kept at module level so a warm serverless instance only has to learn it once.
+function parseForumEnv(value) {
+  const v = String(value || '').trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(v)) return true;
+  if (['0', 'false', 'no', 'off'].includes(v)) return false;
+  return null;
+}
+let forumMode = parseForumEnv(process.env.DISCORD_FORUM);
+
+// Discord JSON error codes we react to.
+const ERR_FORUM_NEEDS_THREAD = 220001; // "Webhooks posted to forum channels must have a thread_name or thread_id"
+const ERR_NOT_A_FORUM = 220003; // "Webhooks can only create threads in forum channels"
 
 const MAX_DESCRIPTION = 4000;
 const MESSAGE_LIMIT = 1900; // Discord caps a message at 2000 characters; follow-ups keep some headroom
@@ -107,8 +121,9 @@ async function postToDiscord(payload, files = [], threadId = '') {
     }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      const err = new Error(`Discord webhook -> ${res.status} ${data.message || ''}`);
+      const err = new Error(`Discord webhook -> ${res.status} ${data.message || ''}`.trim());
       err.status = res.status;
+      err.code = data.code; // Discord's own error code, e.g. 220001
       throw err;
     }
     return data;
@@ -116,6 +131,37 @@ async function postToDiscord(payload, files = [], threadId = '') {
   const err = new Error('Discord webhook -> rate limited');
   err.status = 429;
   throw err;
+}
+
+// Sends the first message of a report. Works for both normal channels and forum channels:
+//  - forum known (env or learned earlier): send with thread_name right away
+//  - otherwise: send as a normal message; if Discord answers 220001 the channel is a forum,
+//    so remember that and resend once with thread_name
+//  - if we guessed forum but Discord answers 220003 the channel is a normal one, so resend without it
+// Returns { message, threaded } where threaded says whether a new forum thread was created.
+async function sendReport(payload, files, threadName) {
+  const attempt = (asThread) =>
+    postToDiscord(asThread ? { ...payload, thread_name: threadName } : payload, files).then((message) => ({
+      message,
+      threaded: asThread,
+    }));
+
+  const first = forumMode === true;
+  try {
+    return await attempt(first);
+  } catch (err) {
+    if (!first && err.code === ERR_FORUM_NEEDS_THREAD) {
+      forumMode = true;
+      console.warn('Webhook belongs to a forum channel; switching to thread mode (set DISCORD_FORUM=1 to skip this check).');
+      return attempt(true);
+    }
+    if (first && err.code === ERR_NOT_A_FORUM) {
+      forumMode = false;
+      console.warn('Webhook is not a forum channel; switching to plain messages (check DISCORD_FORUM).');
+      return attempt(false);
+    }
+    throw err;
+  }
 }
 
 export default async function handler(req, res) {
@@ -166,7 +212,8 @@ export default async function handler(req, res) {
   const log = str(b.log, MAX_LOG_CHARS);
   if (log) files.push({ name: 'launcher-log.txt', type: 'text/plain', data: Buffer.from(log, 'utf8') });
 
-  const firstLine = oneLine(description.split(/\r?\n/)[0], 80);
+  // Thread titles must not be empty, so fall back to something sensible if sanitising ate the whole line.
+  const firstLine = oneLine(description.split(/\r?\n/)[0], 80) || 'New report';
 
   // Plain message, no embed. Example:
   //   **Name:** Anonymous
@@ -203,12 +250,23 @@ export default async function handler(req, res) {
     // Nothing the user typed may ping anybody. Only the configured role (if any) is allowed through.
     allowed_mentions: PING_ROLE ? { parse: [], roles: [PING_ROLE] } : { parse: [] },
   };
-  if (FORUM) payload.thread_name = clip(`${meta.label}: ${firstLine}`, 100);
+  const threadName = clip(`${meta.label}: ${firstLine}`, 100);
 
+  let message;
+  let threaded;
   try {
-    const message = await postToDiscord(payload, files);
-    // In a forum the created message lives in the new thread, whose id is the message's channel_id.
-    const threadId = FORUM ? message.channel_id : '';
+    ({ message, threaded } = await sendReport(payload, files, threadName));
+  } catch (err) {
+    console.error(err.message);
+    const busy = err.status === 429;
+    return res.status(busy ? 503 : 502).json({ error: 'Could not send the report right now. Please try again later.' });
+  }
+
+  // The report itself is delivered at this point. If a follow-up part fails we log it but still answer 201:
+  // telling the launcher "failed" would make the user resend and create a duplicate thread.
+  // In a forum the created message lives in the new thread, whose id is the message's channel_id.
+  const threadId = threaded ? message.channel_id : '';
+  try {
     for (const piece of pieces) {
       await postToDiscord(
         { username: payload.username, content: clip(piece, 2000), flags: 4, allowed_mentions: { parse: [] } },
@@ -216,10 +274,8 @@ export default async function handler(req, res) {
         threadId
       );
     }
-    return res.status(201).json({ ok: true, id: message.id });
   } catch (err) {
-    console.error(err.message);
-    const busy = err.status === 429;
-    return res.status(busy ? 503 : 502).json({ error: 'Could not send the report right now. Please try again later.' });
+    console.error(`Follow-up part failed after the report was posted: ${err.message}`);
   }
+  return res.status(201).json({ ok: true, id: message.id });
 }
