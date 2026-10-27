@@ -8,6 +8,18 @@
 //   DISCORD_FORUM         optional. "1"/"true" = webhook belongs to a forum channel, "0"/"false" = normal text channel.
 //                         Leave it unset and the relay detects the channel type by itself (see sendReport).
 //   DISCORD_PING_ROLE_ID  optional role id to ping on every report (the only mention the bot is allowed to make)
+//
+//   Abuse protection (all optional, safe defaults):
+//   UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN   shared counters + replay protection (Vercel's Upstash/KV
+//                         integration sets KV_REST_API_URL / KV_REST_API_TOKEN, which are accepted as well).
+//                         Without Redis the relay falls back to per-instance memory, which is much weaker.
+//   REPORT_POW_BITS       proof-of-work difficulty in leading zero bits (default 20, ~1 s on a normal PC; 0 = off).
+//                         The launcher's PowBits constant must be >= this value.
+//   REPORT_REQUIRE_POW    "0" lets launchers that do not send a proof through (use only while old builds are around)
+//   REPORT_IP_PER_HOUR    reports per IP per hour (default 5)
+//   REPORT_GLOBAL_PER_HOUR  reports per hour across everybody (default 60); the hard ceiling for the Discord channel
+
+import { createHash } from 'node:crypto';
 
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || '';
 const PING_ROLE = /^\d{5,25}$/.test(process.env.DISCORD_PING_ROLE_ID || '') ? process.env.DISCORD_PING_ROLE_ID : '';
@@ -42,23 +54,138 @@ const TYPES = {
   other: { label: 'Other' },
 };
 
-// Best-effort rate limit. Serverless instances don't share memory, so this only slows down
-// casual spam; for real protection add Vercel's WAF rate limiting on /api/report.
-const PER_IP_LIMIT = 5;
-const WINDOW_MS = 60 * 60 * 1000;
-const hits = new Map();
+// ---------------------------------------------------------------------------------------------------------------
+// Abuse protection. A public client can never keep a secret, so instead of hiding the endpoint we make every
+// report cost something and cap the total. Layers, outermost first:
+//   1. Vercel Firewall rate limit on /api/report (set in the dashboard, runs before this code and costs nothing).
+//   2. Proof of work: each report carries a small computation bound to its own text, so spam costs CPU per message.
+//   3. Single use: a solved proof can never be replayed (stored in Redis for as long as it would be accepted).
+//   4. Per-IP and global hourly caps in Redis, shared by every serverless instance.
+// ---------------------------------------------------------------------------------------------------------------
+function intEnv(name, fallback, min, max) {
+  const n = parseInt(process.env[name] ?? '', 10);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
+}
 
-function rateLimited(ip) {
+const REDIS_URL = (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '').replace(/\/+$/, '');
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
+const REDIS_ON = Boolean(REDIS_URL && REDIS_TOKEN);
+
+const POW_BITS = intEnv('REPORT_POW_BITS', 20, 0, 28);
+const REQUIRE_POW = POW_BITS > 0 && parseForumEnv(process.env.REPORT_REQUIRE_POW) !== false;
+const POW_WINDOW_S = 600; // a proof is accepted if its timestamp is within +-10 minutes of the server clock
+const POW_REPLAY_TTL_S = POW_WINDOW_S * 2 + 60; // long enough that a proof can never be reused while still valid
+const IP_LIMIT = intEnv('REPORT_IP_PER_HOUR', 5, 1, 1000);
+const GLOBAL_LIMIT = intEnv('REPORT_GLOBAL_PER_HOUR', 60, 1, 100000);
+const HOUR_S = 3600;
+
+if (!REDIS_ON) console.warn('No Redis configured: rate limits and replay protection only work per serverless instance.');
+
+// Redis over Upstash's REST API (no dependency needed). Throws on any failure so callers fail closed.
+async function redis(commands) {
+  const res = await fetch(`${REDIS_URL}/pipeline`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${REDIS_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(commands),
+    signal: AbortSignal.timeout(3000),
+  });
+  if (!res.ok) throw new Error(`Redis -> ${res.status}`);
+  const data = await res.json();
+  return data.map((entry) => {
+    if (entry.error) throw new Error(`Redis -> ${entry.error}`);
+    return entry.result;
+  });
+}
+
+// Per-instance fallback used only when Redis is not configured.
+const mem = new Map(); // key -> { n, exp }
+function memEntry(key) {
   const now = Date.now();
-  const recent = (hits.get(ip) || []).filter((t) => now - t < WINDOW_MS);
-  if (recent.length >= PER_IP_LIMIT) {
-    hits.set(ip, recent);
-    return true;
+  if (mem.size > 5000) for (const [k, v] of mem) if (v.exp <= now) mem.delete(k);
+  const e = mem.get(key);
+  return e && e.exp > now ? e : null;
+}
+
+// True the first time a key is seen within ttl seconds, false afterwards.
+async function claimOnce(key, ttl) {
+  if (REDIS_ON) return (await redis([['SET', key, '1', 'NX', 'EX', String(ttl)]]))[0] === 'OK';
+  if (memEntry(key)) return false;
+  mem.set(key, { n: 1, exp: Date.now() + ttl * 1000 });
+  return true;
+}
+
+// Increments a counter that expires after ttl seconds and returns the new value.
+async function bump(key, ttl) {
+  if (REDIS_ON) return Number((await redis([['INCR', key], ['EXPIRE', key, String(ttl)]]))[0]);
+  const e = memEntry(key) || { n: 0, exp: Date.now() + ttl * 1000 };
+  e.n += 1;
+  mem.set(key, e);
+  return e.n;
+}
+
+function sha256(data) {
+  return createHash('sha256').update(data).digest();
+}
+
+function leadingZeroBits(buf) {
+  let bits = 0;
+  for (const byte of buf) {
+    if (byte === 0) {
+      bits += 8;
+      continue;
+    }
+    return bits + Math.clz32(byte) - 24;
   }
-  recent.push(now);
-  hits.set(ip, recent);
-  if (hits.size > 5000) hits.clear();
-  return false;
+  return bits;
+}
+
+// The launcher searches for a nonce so that
+//   SHA-256("<powTime>:<powNonce>:<hex SHA-256 of the description>")
+// starts with POW_BITS zero bits. The proof is tied to the report text, so it cannot be reused for another message,
+// and powTime keeps old proofs from being stockpiled.
+function checkPow(b, description) {
+  const ts = Number(b.powTime);
+  const nonce = typeof b.powNonce === 'string' || typeof b.powNonce === 'number' ? String(b.powNonce) : '';
+  if (!Number.isSafeInteger(ts) || !/^\d{1,20}$/.test(nonce)) {
+    return { ok: false, status: 400, error: 'This launcher version is too old to send reports. Please update it.' };
+  }
+  if (Math.abs(Math.floor(Date.now() / 1000) - ts) > POW_WINDOW_S) {
+    return { ok: false, status: 400, error: "Your computer's clock looks wrong. Fix the date and time and try again." };
+  }
+  const digest = sha256(Buffer.from(description, 'utf8')).toString('hex');
+  const hash = sha256(`${ts}:${nonce}:${digest}`);
+  if (leadingZeroBits(hash) < POW_BITS) {
+    return { ok: false, status: 400, error: 'Invalid proof of work.' };
+  }
+  return { ok: true, id: hash.toString('hex') };
+}
+
+// Vercel sets these itself and overwrites whatever the client sent; x-forwarded-for is only a fallback.
+function clientIp(req) {
+  const h = req.headers;
+  const raw = h['x-vercel-forwarded-for'] || h['x-real-ip'] || h['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+  return String(raw).split(',')[0].trim();
+}
+
+// Returns null when the request may go on, otherwise { status, error }.
+async function guardRequest(b, description, ip) {
+  if (REQUIRE_POW || b.powTime !== undefined || b.powNonce !== undefined) {
+    const pow = checkPow(b, description);
+    if (!pow.ok) return pow;
+    if (!(await claimOnce(`pow:${pow.id}`, POW_REPLAY_TTL_S))) {
+      return { status: 409, error: 'This report was already received.' };
+    }
+  }
+  // Counters only move for requests that solved the proof, so garbage traffic cannot use up the global budget.
+  const bucket = Math.floor(Date.now() / (HOUR_S * 1000));
+  const ipKey = `rl:ip:${bucket}:${sha256(ip).toString('hex').slice(0, 16)}`;
+  if ((await bump(ipKey, HOUR_S + 100)) > IP_LIMIT) {
+    return { status: 429, error: 'Too many reports from your network, please try again later.' };
+  }
+  if ((await bump(`rl:global:${bucket}`, HOUR_S + 100)) > GLOBAL_LIMIT) {
+    return { status: 503, error: 'Reports are paused for a moment because too many came in. Please try again later.' };
+  }
+  return null;
 }
 
 // One-line fields: no newlines, no characters that would turn into markdown links.
@@ -174,9 +301,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Report server is not configured.' });
   }
 
-  const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
-  if (rateLimited(ip)) return res.status(429).json({ error: 'Too many reports, please try again later.' });
-
   let b = req.body;
   if (typeof b === 'string') {
     try {
@@ -187,8 +311,20 @@ export default async function handler(req, res) {
   }
   if (!b || typeof b !== 'object') return res.status(400).json({ error: 'Invalid request.' });
 
+  const rawDescription = typeof b.description === 'string' ? b.description : '';
+  if (rawDescription.length > MAX_DESCRIPTION * 2) return res.status(400).json({ error: 'The description is too long.' });
   const description = str(b.description, MAX_DESCRIPTION).trim();
   if (description.length < MIN_DESCRIPTION) return res.status(400).json({ error: 'Please describe the problem a bit more.' });
+
+  // Abuse protection (proof of work, replay check, shared rate limits). If the counter store is down we refuse
+  // the report instead of letting everything through.
+  try {
+    const blocked = await guardRequest(b, rawDescription, clientIp(req));
+    if (blocked) return res.status(blocked.status).json({ error: blocked.error });
+  } catch (err) {
+    console.error(`Abuse protection failed: ${err.message}`);
+    return res.status(503).json({ error: 'Reports are temporarily unavailable. Please try again later.' });
+  }
 
   const type = TYPES[b.type] ? b.type : 'bug'; // older launchers don't send a type
   const meta = TYPES[type];
