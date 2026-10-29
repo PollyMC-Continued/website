@@ -1,7 +1,13 @@
 // GET  /api/status?ids=ID1,ID2   -> launcher asks for the status of its own reports (max 20 IDs)
 // POST /api/status               -> PollyBot sets a status (Authorization: Bearer REPORT_BOT_SECRET)
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { STATUSES, ID_RE, normalizeId, getStatuses, setStatus } from './_reportStore.js';
+import { STATUSES, ID_RE, normalizeId, getStatuses, setStatus, underLimit } from './_reportStore.js';
+
+function clientIp(req) {
+  const h = req.headers;
+  const raw = h['x-vercel-forwarded-for'] || h['x-real-ip'] || h['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
+  return String(raw).split(',')[0].trim();
+}
 
 function botAuthorized(req) {
   const secret = process.env.REPORT_BOT_SECRET;
@@ -17,6 +23,10 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   try {
     if (req.method === 'GET') {
+      // 30 lookups per minute per IP. Launchers check once on startup, so normal users never reach this.
+      if (!(await underLimit(clientIp(req), 30, 60))) {
+        return res.status(429).json({ ok: false, error: 'Too many lookups. Try again in a minute.' });
+      }
       const ids = [...new Set(String(req.query.ids || '').split(',').slice(0, 20).map(normalizeId))].filter(id => ID_RE.test(id));
       if (!ids.length) return res.status(400).json({ ok: false, error: 'No valid report IDs.' });
       // Only the status code and version are ever returned, never the report text, name or contact.
