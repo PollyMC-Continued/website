@@ -18,8 +18,14 @@
 //   REPORT_REQUIRE_POW    "0" lets launchers that do not send a proof through (use only while old builds are around)
 //   REPORT_IP_PER_HOUR    reports per IP per hour (default 5)
 //   REPORT_GLOBAL_PER_HOUR  reports per hour across everybody (default 60); the hard ceiling for the Discord channel
+//
+//   Report IDs / status (needs Redis; see api/status.js):
+//   Every accepted report gets a random ID. It is returned to the launcher, shown in the first message and added to the
+//   forum thread title, so PollyBot's /status command can set a status the reporter's launcher will show.
+//   REPORT_BOT_SECRET     used by api/status.js (not by this file)
 
 import { createHash } from 'node:crypto';
+import { createReport, displayId } from './_reportStore.js';
 
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL || '';
 const PING_ROLE = /^\d{5,25}$/.test(process.env.DISCORD_PING_ROLE_ID || '') ? process.env.DISCORD_PING_ROLE_ID : '';
@@ -336,6 +342,18 @@ export default async function handler(req, res) {
   const arch = oneLine(b.arch, 20) || 'unknown';
   const qt = oneLine(b.qt, 20) || 'unknown';
 
+  // Short ID the launcher shows to the reporter and the team looks up with /status. It never blocks a report:
+  // without Redis, or if the store is down, the report goes out without an ID and the launcher just won't track it.
+  let reportId = '';
+  if (REDIS_ON) {
+    try {
+      reportId = await createReport();
+    } catch (err) {
+      console.error(`Report ID failed: ${err.message}`);
+    }
+  }
+  const idLabel = reportId ? displayId(reportId) : '';
+
   // Attachments. Screenshots must decode to a real JPEG (the launcher always sends JPEG) and stay small.
   const files = [];
   for (const raw of Array.isArray(b.screenshots) ? b.screenshots.slice(0, MAX_SHOTS) : []) {
@@ -361,6 +379,7 @@ export default async function handler(req, res) {
     log ? 'launcher log' : '',
   ].filter(Boolean);
   const header = [
+    ...(idLabel ? [`**Report ID:** \`${idLabel}\``] : []),
     `**Name:** ${escapeMd(name)}`,
     `**Contact:** ${contact ? escapeMd(contact) : "Didn't leave one"}`,
     `**Launcher:** ${version} (${platform})`,
@@ -386,7 +405,9 @@ export default async function handler(req, res) {
     // Nothing the user typed may ping anybody. Only the configured role (if any) is allowed through.
     allowed_mentions: PING_ROLE ? { parse: [], roles: [PING_ROLE] } : { parse: [] },
   };
-  const threadName = clip(`${meta.label}: ${firstLine}`, 100);
+  // Discord caps thread names at 100 characters: shorten the title, never the ID tag (/status reads it from here).
+  const idTag = idLabel ? ` \u00b7 #${idLabel}` : '';
+  const threadName = clip(`${meta.label}: ${firstLine}`, 100 - idTag.length) + idTag;
 
   let message;
   let threaded;
@@ -413,5 +434,6 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error(`Follow-up part failed after the report was posted: ${err.message}`);
   }
-  return res.status(201).json({ ok: true, id: message.id });
+  // id: what the launcher stores (null = not tracked). messageId: Discord's own id, kept for debugging.
+  return res.status(201).json({ ok: true, id: reportId || null, messageId: message.id });
 }
