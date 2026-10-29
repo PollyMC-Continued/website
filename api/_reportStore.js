@@ -1,9 +1,9 @@
 // Report ID + status store. Files starting with "_" in /api are not exposed as routes by Vercel.
 // Uses Upstash Redis over its REST API (Vercel Marketplace -> Upstash Redis). No dependencies.
-import { randomInt } from 'node:crypto';
+import { randomInt, createHash } from 'node:crypto';
 
-const REST_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const REST_URL = (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '').replace(/\/+$/, '');
+const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
 
 // An ID lives 90 days after the last time it was created, looked up by a launcher, or changed by the bot.
 export const TTL_SECONDS = 90 * 24 * 60 * 60;
@@ -66,4 +66,17 @@ export async function setStatus(id, status, version) {
   const value = JSON.stringify({ s: status, v: version || '', u: Date.now() });
   const [ok] = await redis([['SET', key(id), value, 'XX', 'EX', TTL_SECONDS]]); // XX: only if it exists
   return ok === 'OK';
+}
+
+/** Counts requests per IP in a time window. Returns false once the limit is passed. */
+export async function underLimit(ip, limit, windowSeconds) {
+  if (!REST_URL || !REST_TOKEN) return true; // no Redis: allow the lookup (IDs are unguessable anyway)
+  const bucket = Math.floor(Date.now() / (windowSeconds * 1000));
+  const ipHash = createHash('sha256').update(ip).digest('hex').slice(0, 16); // never store raw IPs
+  const k = `rl:status:${bucket}:${ipHash}`;
+  const [count] = await redis([
+    ['INCR', k],
+    ['EXPIRE', k, String(windowSeconds + 10)],
+  ]);
+  return Number(count) <= limit;
 }
