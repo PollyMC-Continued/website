@@ -8,7 +8,7 @@ function esc(s: string): string {
 function renderBlock(block: ChangelogBlock): string {
 	switch (block.type) {
 		case 'version':
-			return `<h2><a href="${esc(block.url)}" target="_blank" rel="noopener">${esc(block.version)}</a></h2>`;
+			return '';
 		case 'label':
 			return `<h3 class="${block.cls ? `tag ${block.cls}` : ''}">${esc(block.text)}</h3>`;
 		case 'list':
@@ -28,7 +28,20 @@ async function run(): Promise<void> {
 		const res = await fetch(`${rawBase}/CHANGELOG.md`);
 		if (!res.ok) throw new Error(`GitHub request failed (${res.status})`);
 		const md = await res.text();
-		container.innerHTML = parseChangelog(md).map(renderBlock).join('');
+		const blocks = parseChangelog(md);
+		const groups: { version?: Extract<ChangelogBlock, { type: 'version' }>; body: ChangelogBlock[] }[] = [];
+		for (const b of blocks) {
+			if (b.type === 'version') groups.push({ version: b, body: [] });
+			else if (groups.length) groups[groups.length - 1].body.push(b);
+			else groups.push({ body: [b] });
+		}
+		container.innerHTML = groups
+			.map((g) =>
+				g.version
+					? `<details class="cl-version"><summary>Changelog for ${esc(g.version.version)}</summary><div class="cl-body">${g.body.map(renderBlock).join('')}<a class="cl-release" href="${esc(g.version.url)}" target="_blank" rel="noopener">View release on GitHub</a></div></details>`
+					: `<div class="cl-body">${g.body.map(renderBlock).join('')}</div>`,
+			)
+			.join('');
 	} catch {
 		container.innerHTML = '<p>Could not load the changelog.</p>';
 	}

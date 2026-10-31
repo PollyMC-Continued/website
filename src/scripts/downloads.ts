@@ -60,7 +60,13 @@ function apply(latest: Latest, totalDownloads: number): void {
 	});
 
 	const num = document.querySelector<HTMLElement>('.downloads-total .num');
-	if (num) num.textContent = totalDownloads.toLocaleString();
+	if (num) num.textContent = formatCount(totalDownloads);
+}
+
+function formatCount(n: number): string {
+	if (n < 10000) return n.toLocaleString();
+	if (n < 1_000_000) return `${(Math.floor(n / 100) / 10).toFixed(1)}k`;
+	return `${(Math.floor(n / 100_000) / 10).toFixed(1)}M`;
 }
 
 function readCache(): Cache | null {

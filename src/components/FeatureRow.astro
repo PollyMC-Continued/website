@@ -11,13 +11,13 @@ interface Props {
 	title: string;
 	paragraphs: string[];
 	reverse?: boolean;
-	screenshot: ScreenshotProps;
+	screenshot?: ScreenshotProps;
 }
 
 const { title, paragraphs, reverse = false, screenshot } = Astro.props;
 ---
 
-<div class={`row${reverse ? ' row-reverse' : ''}`}>
+<div class={`row${reverse ? ' row-reverse' : ''}${screenshot ? '' : ' single'}`}>
 	<div class="column">
 		<div class="reveal">
 			<h1>{title}</h1>
@@ -26,7 +26,9 @@ const { title, paragraphs, reverse = false, screenshot } = Astro.props;
 			</div>
 		</div>
 	</div>
-	<div class="column">
-		<Screenshot {...screenshot} />
-	</div>
+	{screenshot && (
+		<div class="column">
+			<Screenshot {...screenshot} />
+		</div>
+	)}
 </div>

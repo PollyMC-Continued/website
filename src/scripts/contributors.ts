@@ -4,7 +4,7 @@ interface Contributor {
 	login: string;
 	html_url: string;
 	avatar_url: string;
-	contributions: number;
+	type?: string;
 }
 
 async function run(): Promise<void> {
@@ -17,7 +17,8 @@ async function run(): Promise<void> {
 			headers: { Accept: 'application/vnd.github+json' },
 		});
 		if (!res.ok) throw new Error(`GitHub request failed (${res.status})`);
-		const data = (await res.json()) as Contributor[];
+		const all = (await res.json()) as Contributor[];
+		const data = all.filter((c) => c.type !== 'Bot' && !c.login.toLowerCase().endsWith('[bot]'));
 
 		if (count) {
 			count.textContent = `${data.length} contributor${data.length === 1 ? '' : 's'}`;
@@ -31,17 +32,17 @@ async function run(): Promise<void> {
 			a.href = c.html_url;
 			a.target = '_blank';
 			a.rel = 'noopener';
+			a.title = c.login;
+			a.setAttribute('aria-label', c.login);
 
 			const img = document.createElement('img');
 			img.src = `${c.avatar_url}?s=160`;
 			img.alt = c.login;
+			img.width = 160;
+			img.height = 160;
 			img.loading = 'lazy';
 
-			const role = document.createElement('span');
-			role.className = 'role';
-			role.textContent = `${c.contributions} contribution${c.contributions === 1 ? '' : 's'}`;
-
-			a.append(img, document.createTextNode(c.login), role);
+			a.append(img);
 			li.append(a);
 			ul.append(li);
 		}

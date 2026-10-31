@@ -3,7 +3,7 @@ interface Person {
 	name: string;
 	href: string;
 	avatar: string;
-	role: string;
+	role?: string;
 }
 
 interface Props {
@@ -13,13 +13,11 @@ interface Props {
 const { people } = Astro.props;
 ---
 
-<ul class="people">
+<ul class="people people-lg">
 	{people.map((p) => (
 		<li>
-			<a href={p.href} target="_blank" rel="noopener">
-				<img src={p.avatar} alt={p.name} loading="lazy" />
-				{p.name}
-				<span class="role">{p.role}</span>
+			<a href={p.href} target="_blank" rel="noopener" aria-label={p.name} title={p.name}>
+				<img src={p.avatar} alt={p.name} width="160" height="160" loading="lazy" />
 			</a>
 		</li>
 	))}

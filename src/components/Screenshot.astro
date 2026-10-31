@@ -7,9 +7,10 @@ interface Props {
     alt: string;
     assetHint: string;
     reveal?: boolean;
+    eager?: boolean;
 }
 
-const { src, alt, assetHint, reveal = true } = Astro.props;
+const { src, alt, assetHint, reveal = true, eager = false } = Astro.props;
 ---
 
 <div class={`shot${reveal ? " reveal" : ""}`}>
@@ -19,7 +20,8 @@ const { src, alt, assetHint, reveal = true } = Astro.props;
     <Image
         src={src}
         alt={alt}
-        loading="lazy"
+        loading={eager ? "eager" : "lazy"}
+        fetchpriority={eager ? "high" : "auto"}
         decoding="async"
         onerror="this.remove()"
     />
