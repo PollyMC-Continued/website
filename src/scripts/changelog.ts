@@ -35,10 +35,12 @@ async function run(): Promise<void> {
 			else if (groups.length) groups[groups.length - 1].body.push(b);
 			else groups.push({ body: [b] });
 		}
+		// The latest release is the first version entry in the file
+		const firstVersion = groups.findIndex((g) => g.version);
 		container.innerHTML = groups
-			.map((g) =>
+			.map((g, i) =>
 				g.version
-					? `<details class="cl-version"><summary>Changelog for ${esc(g.version.version)}</summary><div class="cl-body">${g.body.map(renderBlock).join('')}<a class="cl-release" href="${esc(g.version.url)}" target="_blank" rel="noopener">View release on GitHub</a></div></details>`
+					? `<details class="cl-version"${i === firstVersion ? ' open' : ''}><summary>Changelog for ${esc(g.version.version)}</summary><div class="cl-body">${g.body.map(renderBlock).join('')}<a class="cl-release" href="${esc(g.version.url)}" target="_blank" rel="noopener">View release on GitHub</a></div></details>`
 					: `<div class="cl-body">${g.body.map(renderBlock).join('')}</div>`,
 			)
 			.join('');
