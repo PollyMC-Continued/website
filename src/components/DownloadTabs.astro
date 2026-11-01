@@ -40,7 +40,10 @@ const icons: Record<string, string> = {
 		aria-labelledby={`tab-${platform.id}`}
 	>
 		<div class="panel-body">
-			<div class="download-screenshot">
+			<div
+				class="download-screenshot"
+				style={platform.screenshot ? `aspect-ratio: ${platform.screenshot.width} / ${platform.screenshot.height}` : undefined}
+			>
 				<span class="shot-ph">Screenshot coming soon</span>
 				{platform.screenshot && (
 					<>
@@ -59,7 +62,6 @@ const icons: Record<string, string> = {
 							alt={`PollyMC-Continued on ${platform.name}`}
 							loading="lazy"
 							decoding="async"
-							onload="this.closest('.download-screenshot').classList.add('has-shot')"
 							onerror="this.remove()"
 						/>
 					</>

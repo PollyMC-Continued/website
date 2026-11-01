@@ -13,7 +13,10 @@ interface Props {
 const { src, alt, assetHint, reveal = true, eager = false } = Astro.props;
 ---
 
-<div class={`shot${reveal ? " reveal" : ""}`}>
+<div
+    class={`shot${reveal ? " reveal" : ""}`}
+    style={`aspect-ratio: ${src.width} / ${src.height}`}
+>
     <span class="shot-ph"
         >Screenshot coming soon — add <code>{assetHint}</code></span
     >
