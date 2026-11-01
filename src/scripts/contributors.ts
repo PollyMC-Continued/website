@@ -9,7 +9,6 @@ interface Contributor {
 
 async function run(): Promise<void> {
 	const list = document.querySelector<HTMLElement>('#contributors-list');
-	const count = document.querySelector<HTMLElement>('#contributors-count');
 	if (!list) return;
 
 	try {
@@ -19,10 +18,6 @@ async function run(): Promise<void> {
 		if (!res.ok) throw new Error(`GitHub request failed (${res.status})`);
 		const all = (await res.json()) as Contributor[];
 		const data = all.filter((c) => c.type !== 'Bot' && !c.login.toLowerCase().endsWith('[bot]'));
-
-		if (count) {
-			count.textContent = `${data.length} contributor${data.length === 1 ? '' : 's'}`;
-		}
 
 		const ul = document.createElement('ul');
 		ul.className = 'people';
@@ -48,7 +43,7 @@ async function run(): Promise<void> {
 		}
 		list.replaceChildren(ul);
 	} catch {
-		if (count) count.textContent = 'Could not load contributors.';
+		list.textContent = 'Could not load contributors.';
 	}
 }
 

@@ -68,6 +68,12 @@ export function parseChangelog(md: string): ChangelogBlock[] {
 			continue;
 		}
 
+		// Leftover merge-conflict markers (<<<<<<< HEAD, =======, >>>>>>> NIGHTLY, ...)
+		if (/^(<{3,}|>{3,}|\|{3,}|={4,})(\s.*)?$/.test(t)) {
+			closeList();
+			continue;
+		}
+
 		if (t.startsWith('#')) {
 			closeList();
 			let level = 0;

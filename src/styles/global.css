@@ -812,6 +812,8 @@ body.star-toast-open {
     padding: 0.7em 1.1em;
     font-size: clamp(0.9rem, 4.2vw, 1.15rem);
     font-weight: 800;
+    word-spacing: 0.2em;
+    letter-spacing: 0.01em;
     white-space: nowrap;
     cursor: pointer;
     list-style: none;
