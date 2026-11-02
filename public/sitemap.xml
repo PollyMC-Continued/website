@@ -33,4 +33,12 @@
     <priority>0.5</priority>
   </url>
 
+    <!-- Antivirus -->
+  <url>
+    <loc>https://pollymc.vercel.app/antivirus/</loc>
+    <lastmod>2026-11-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
 </urlset>
