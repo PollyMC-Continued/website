@@ -25,7 +25,18 @@ const {
 	noindex = false,
 } = Astro.props;
 
-const fullTitle = `${title} - PollyMC-Continued`;
+const fullTitle =
+	active === "home"
+		? "PollyMC-Continued - Minecraft Launcher"
+		: `${title} - PollyMC-Continued`;
+
+const siteSchema = {
+	"@context": "https://schema.org",
+	"@type": "WebSite",
+	name: "PollyMC-Continued",
+	alternateName: ["PollyMC"],
+	url: "https://pollymc.vercel.app/",
+};
 ---
 
 <!doctype html>
@@ -33,6 +44,7 @@ const fullTitle = `${title} - PollyMC-Continued`;
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="google-site-verification" content="3KxqtSEWNgakHePmf3Z9XVF58O-wwhlb26sSIvsKMGk" />
 		<script is:inline>document.documentElement.classList.add("js")</script>
 		<link rel="preload" href="/fonts/Rubik-font.woff2" as="font" type="font/woff2" crossorigin />
 		<title>{fullTitle}</title>
@@ -58,6 +70,9 @@ const fullTitle = `${title} - PollyMC-Continued`;
 			</>
 		)}
 		{noindex && <meta name="robots" content="noindex" />}
+		{active === "home" && (
+			<script type="application/ld+json" set:html={JSON.stringify(siteSchema)} />
+		)}
 		<Analytics />
 	</head>
 	<body>
