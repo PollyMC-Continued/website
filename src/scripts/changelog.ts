@@ -20,6 +20,77 @@ function renderBlock(block: ChangelogBlock): string {
 	}
 }
 
+const DURATION = 340;
+const EASING = 'cubic-bezier(0.2, 0, 0, 1)';
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+const running = new WeakMap<HTMLDetailsElement, Animation[]>();
+
+function stop(details: HTMLDetailsElement): void {
+	running.get(details)?.forEach((a) => a.cancel());
+	running.delete(details);
+}
+
+/** Opens or closes a changelog entry with a height + fade animation. */
+function toggle(details: HTMLDetailsElement, opening: boolean): void {
+	const body = details.querySelector<HTMLElement>('.cl-body');
+	if (!body || reducedMotion.matches) {
+		details.classList.remove('is-closing');
+		details.open = opening;
+		return;
+	}
+
+	const startH = details.offsetHeight;
+	stop(details);
+
+	if (opening) {
+		details.classList.remove('is-closing');
+		details.open = true;
+		const endH = details.offsetHeight;
+		const height = details.animate(
+			{ height: [`${startH}px`, `${endH}px`] },
+			{ duration: DURATION, easing: EASING },
+		);
+		const fade = body.animate(
+			{ opacity: [0, 1], transform: ['translateY(-8px)', 'translateY(0)'] },
+			{ duration: DURATION, easing: EASING },
+		);
+		running.set(details, [height, fade]);
+		height.onfinish = () => running.delete(details);
+	} else {
+		// Measure the collapsed height without painting
+		details.open = false;
+		const endH = details.offsetHeight;
+		details.open = true;
+		details.classList.add('is-closing');
+		const height = details.animate(
+			{ height: [`${startH}px`, `${endH}px`] },
+			{ duration: DURATION, easing: EASING, fill: 'forwards' },
+		);
+		const fade = body.animate(
+			{ opacity: [1, 0], transform: ['translateY(0)', 'translateY(-8px)'] },
+			{ duration: DURATION * 0.7, easing: EASING, fill: 'forwards' },
+		);
+		running.set(details, [height, fade]);
+		height.onfinish = () => {
+			details.open = false;
+			details.classList.remove('is-closing');
+			stop(details);
+		};
+	}
+}
+
+function bindToggles(container: HTMLElement): void {
+	container.querySelectorAll<HTMLDetailsElement>('details.cl-version').forEach((details) => {
+		const summary = details.querySelector('summary');
+		summary?.addEventListener('click', (e) => {
+			e.preventDefault();
+			const opening = !details.open || details.classList.contains('is-closing');
+			toggle(details, opening);
+		});
+	});
+}
+
 async function run(): Promise<void> {
 	const container = document.querySelector<HTMLElement>('.changelog');
 	if (!container) return;
@@ -35,15 +106,20 @@ async function run(): Promise<void> {
 			else if (groups.length) groups[groups.length - 1].body.push(b);
 			else groups.push({ body: [b] });
 		}
-		// The latest release is the first version entry in the file
-		const firstVersion = groups.findIndex((g) => g.version);
 		container.innerHTML = groups
-			.map((g, i) =>
+			.map((g) =>
 				g.version
-					? `<details class="cl-version"${i === firstVersion ? ' open' : ''}><summary>Changelog for ${esc(g.version.version)}</summary><div class="cl-body">${g.body.map(renderBlock).join('')}<a class="cl-release" href="${esc(g.version.url)}" target="_blank" rel="noopener">View release on GitHub</a></div></details>`
+					? `<details class="cl-version"><summary>Changelog for ${esc(g.version.version)}</summary><div class="cl-body">${g.body.map(renderBlock).join('')}<a class="cl-release" href="${esc(g.version.url)}" target="_blank" rel="noopener">View release on GitHub</a></div></details>`
 					: `<div class="cl-body">${g.body.map(renderBlock).join('')}</div>`,
 			)
 			.join('');
+		bindToggles(container);
+
+		// Auto-open the latest release with the same animation
+		const latest = container.querySelectorAll<HTMLDetailsElement>('details.cl-version')[0];
+		if (latest) {
+			requestAnimationFrame(() => requestAnimationFrame(() => toggle(latest, true)));
+		}
 	} catch {
 		container.innerHTML = '<p>Could not load the changelog.</p>';
 	}
