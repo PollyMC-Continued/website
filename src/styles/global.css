@@ -842,6 +842,12 @@ body.star-toast-open {
 .cl-version[open] summary {
     border-bottom: 1px solid var(--accent-light);
 }
+.cl-version.is-closing summary {
+    border-bottom-color: transparent;
+}
+.cl-version.is-closing summary::after {
+    transform: translateY(-25%) rotate(45deg);
+}
 .cl-body {
     padding: 0.25em 1.1em 0.5em;
 }
