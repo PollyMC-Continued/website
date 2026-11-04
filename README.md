@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://pollymc.vercel.app/">
-    <img src="./public/website-logo-text.svg" alt="PollyMC-Continued Website" height="75">
+    <img src="./public/website-logo-text.svg" alt="PollyMC-Continued Website" height="65">
   </a>
 </p>
 
