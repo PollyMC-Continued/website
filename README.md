@@ -1,10 +1,14 @@
 <div align="center">
 
-<img width="160" height="160" src="./public/logo.svg" alt="PollyMC-Continued logo">
+<p align="center">
+  <img width="160" height="160" src="./public/logo.svg" alt="PollyMC-Continued logo">
+</p>
 
-<h1>
-<a style="color:#f5c2e7" href="https://pollymc.vercel.app/">PollyMC-Continued Website</a>
-</h1>
+<p align="center">
+  <a href="https://pollymc.vercel.app/">
+    <img src="./public/website-logo-text.svg" alt="PollyMC-Continued Website" height="75">
+  </a>
+</p>
 
 **The home of PollyMC-Continued.** Downloads, changelog and the people behind the launcher, all on a fast static site.
 
