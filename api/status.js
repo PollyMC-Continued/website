@@ -1,7 +1,7 @@
 // GET  /api/status?ids=ID1,ID2   -> launcher asks for the status of its own reports (max 20 IDs)
 // POST /api/status               -> PollyBot sets a status (Authorization: Bearer REPORT_BOT_SECRET)
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { STATUSES, ID_RE, normalizeId, getStatuses, setStatus, underLimit } from './_reportStore.js';
+import { STATUSES, ID_RE, normalizeId, getStatuses, setStatus, setCooldown, underLimit } from './_reportStore.js';
 
 function clientIp(req) {
   const h = req.headers;
@@ -42,6 +42,13 @@ export default async function handler(req, res) {
         return res.status(400).json({ ok: false, error: 'Invalid JSON.' });
       }
       const id = normalizeId(body?.id);
+      if (body?.action === 'cooldown') {
+        const minutes = Math.round(Number(body?.minutes));
+        if (!ID_RE.test(id)) return res.status(400).json({ ok: false, error: 'Invalid report ID.' });
+        if (!Number.isFinite(minutes) || minutes < 1 || minutes > 120) return res.status(400).json({ ok: false, error: 'Minutes must be 1-120.' });
+        const until = await setCooldown(id, minutes);
+        return until ? res.status(200).json({ ok: true, until }) : res.status(404).json({ ok: false, error: 'Unknown report ID.' });
+      }
       const status = String(body?.status || '');
       const version = String(body?.version || '').trim().replace(/^v/i, '');
       if (!ID_RE.test(id)) return res.status(400).json({ ok: false, error: 'Invalid report ID.' });

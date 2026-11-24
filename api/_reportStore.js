@@ -53,7 +53,8 @@ export async function getStatuses(ids) {
   ids.forEach((id, i) => {
     try {
       const r = results[i] ? JSON.parse(results[i]) : null;
-      out[id] = r ? { status: r.s, version: r.v, updated: r.u } : null;
+      // cooldown: epoch ms until which the launcher refuses new reports (0 = none). Set by the bot, see setCooldown().
+      out[id] = r ? { status: r.s, version: r.v, updated: r.u, cooldown: Number(r.c) > Date.now() ? Number(r.c) : 0 } : null;
     } catch {
       out[id] = null;
     }
@@ -63,9 +64,35 @@ export async function getStatuses(ids) {
 
 /** Bot update. Returns false when the ID does not exist (typo or expired). */
 export async function setStatus(id, status, version) {
-  const value = JSON.stringify({ s: status, v: version || '', u: Date.now() });
-  const [ok] = await redis([['SET', key(id), value, 'XX', 'EX', TTL_SECONDS]]); // XX: only if it exists
+  const current = await readRecord(id);
+  if (!current) return false;
+  const record = { s: status, v: version || '', u: Date.now() };
+  if (Number(current.c) > Date.now()) record.c = current.c; // a running cooldown survives a status change
+  const [ok] = await redis([['SET', key(id), JSON.stringify(record), 'XX', 'EX', TTL_SECONDS]]); // XX: only if it exists
   return ok === 'OK';
+}
+
+async function readRecord(id) {
+  const [raw] = await redis([['GET', key(id)]]);
+  try {
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Bot: ask the launcher that sent this report to stop sending new ones for a while. Nothing about the sender is
+ * stored: the launcher learns about it the next time it asks for its report statuses and then blocks itself.
+ * Returns the end time in epoch ms, or null when the ID does not exist.
+ */
+export async function setCooldown(id, minutes) {
+  const current = await readRecord(id);
+  if (!current) return null;
+  const until = Date.now() + minutes * 60 * 1000;
+  current.c = until; // "u" stays as it was, so the reporter does not get a "your report was updated" toast
+  const [ok] = await redis([['SET', key(id), JSON.stringify(current), 'XX', 'EX', TTL_SECONDS]]);
+  return ok === 'OK' ? until : null;
 }
 
 /** Counts requests per IP in a time window. Returns false once the limit is passed. */
