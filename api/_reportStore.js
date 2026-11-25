@@ -1,5 +1,3 @@
-// Report ID + status store. Files starting with "_" in /api are not exposed as routes by Vercel.
-// Uses Upstash Redis over its REST API (Vercel Marketplace -> Upstash Redis). No dependencies.
 import { randomInt, createHash } from 'node:crypto';
 
 const REST_URL = (process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '').replace(/\/+$/, '');
