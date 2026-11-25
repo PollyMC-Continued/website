@@ -6,7 +6,11 @@ const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_A
 // An ID lives 90 days after the last time it was created, looked up by a launcher, or changed by the bot.
 export const TTL_SECONDS = 90 * 24 * 60 * 60;
 
-export const STATUSES = ['received', 'seen', 'need_info', 'fixed_next', 'fixed', 'wont_fix', 'duplicate', 'not_a_bug'];
+// Keep in sync with the launcher (BugReportTracker.cpp, MyReportsDialog.cpp) and the bot's REPORT_STATUSES.
+export const STATUSES = [
+  'received', 'seen', 'in_progress', 'need_info', 'cannot_reproduce', 'fixed_next', 'fixed',
+  'planned', 'added', 'wont_fix', 'duplicate', 'not_a_bug', 'not_launcher',
+];
 
 // 31 characters, no 0/O/1/I/L (easy to misread). 31^10 is about 8e14 (~49 bits): not guessable.
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
