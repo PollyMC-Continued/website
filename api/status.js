@@ -1,5 +1,3 @@
-// GET  /api/status?ids=ID1,ID2   -> launcher asks for the status of its own reports (max 20 IDs)
-// POST /api/status               -> PollyBot sets a status (Authorization: Bearer REPORT_BOT_SECRET)
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { STATUSES, ID_RE, normalizeId, getStatuses, setStatus, setCooldown, underLimit } from './_reportStore.js';
 
