@@ -1,29 +1,3 @@
-// PollyMC-Continued bug report relay (Vercel serverless function, ES module).
-// Receives a report from the launcher's "Report a Bug" dialog and posts it as a plain message (no embed) through a
-// Discord webhook. With a forum channel every report becomes its own thread titled "Bug: ...", "Suggestion: ...", etc.
-// The webhook URL stays in an environment variable and never ships inside the launcher.
-//
-// Env vars:
-//   DISCORD_WEBHOOK_URL   required. Channel > Edit > Integrations > Webhooks > Copy Webhook URL
-//   DISCORD_FORUM         optional. "1"/"true" = webhook belongs to a forum channel, "0"/"false" = normal text channel.
-//                         Leave it unset and the relay detects the channel type by itself (see sendReport).
-//   DISCORD_PING_ROLE_ID  optional role id to ping on every report (the only mention the bot is allowed to make)
-//
-//   Abuse protection (all optional, safe defaults):
-//   UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN   shared counters + replay protection (Vercel's Upstash/KV
-//                         integration sets KV_REST_API_URL / KV_REST_API_TOKEN, which are accepted as well).
-//                         Without Redis the relay falls back to per-instance memory, which is much weaker.
-//   REPORT_POW_BITS       proof-of-work difficulty in leading zero bits (default 20, ~1 s on a normal PC; 0 = off).
-//                         The launcher's PowBits constant must be >= this value.
-//   REPORT_REQUIRE_POW    "0" lets launchers that do not send a proof through (use only while old builds are around)
-//   REPORT_IP_PER_HOUR    reports per IP per hour (default 5)
-//   REPORT_GLOBAL_PER_HOUR  reports per hour across everybody (default 60); the hard ceiling for the Discord channel
-//
-//   Report IDs / status (needs Redis; see api/status.js):
-//   Every accepted report gets a random ID. It is returned to the launcher, shown in the first message and added to the
-//   forum thread title, so PollyBot's /status command can set a status the reporter's launcher will show.
-//   REPORT_BOT_SECRET     used by api/status.js (not by this file)
-
 import { createHash } from 'node:crypto';
 import { createReport, displayId } from './_reportStore.js';
 
