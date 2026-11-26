@@ -229,6 +229,7 @@ header nav {
     text-decoration: none;
     background-color: var(--primary);
     border-radius: 8px;
+    border: none;
     transition:
         background-color 150ms ease,
         transform 150ms ease;
