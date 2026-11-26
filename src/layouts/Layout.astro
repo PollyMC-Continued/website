@@ -79,7 +79,7 @@ const siteSchema = {
 				<meta name="twitter:image:alt" content={ogImageAlt} />
 			</>
 		)}
-		{noindex && <meta name="robots" content="noindex" />}
+		{noindex && <meta name="robots" content="noindex, nofollow" />}
 		{active === "home" && (
 			<script type="application/ld+json" set:html={JSON.stringify(siteSchema)} />
 		)}

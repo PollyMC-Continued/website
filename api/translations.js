@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 
 // POST /api/translations — anonymous translation suggestions for the web editor
 // at /translation/editor/. The editor never writes to GitHub: suggestions are
@@ -15,7 +15,7 @@ import { createHash } from 'node:crypto';
 
 const MAX_STRINGS_PER_SUBMISSION = 60;
 const MAX_STRING_CHARS = 4000;
-const MAX_PENDING_PER_IP = 25; // strings, not submissions
+const MAX_PENDING_PER_IP = 150; // strings, not submissions
 const MAX_NAME = 60;
 const MAX_CONTACT = 80;
 const LANG_RE = /^[\w@.-]{1,30}$/;
@@ -64,10 +64,12 @@ async function claimOnce(key, ttl) {
   return true;
 }
 
-async function bump(key, ttl) {
-  if (REDIS_ON) return Number((await redis([['INCR', key], ['EXPIRE', key, String(ttl)]]))[0]);
+async function bumpBy(key, delta, ttl) {
+  if (REDIS_ON) {
+    return Number((await redis([['INCRBY', key, String(delta)], ['EXPIRE', key, String(ttl)]]))[0]);
+  }
   const e = memEntry(key) || { n: 0, exp: Date.now() + ttl * 1000 };
-  e.n += 1;
+  e.n += delta;
   mem.set(key, e);
   return e.n;
 }
@@ -132,8 +134,9 @@ function validateBody(b) {
   if (name.length < 2) return { status: 400, error: 'A name (2-60 characters) is required so you can be credited.' };
   const contact = oneLine(b.contact, MAX_CONTACT);
 
-  if (!Array.isArray(b.suggestions)) return { status: 400, error: 'Nothing to submit.' };
-  if (b.suggestions.length === 0) return { status: 400, error: 'Nothing to submit.' };
+  if (!Array.isArray(b.suggestions) || b.suggestions.length === 0) {
+    return { status: 400, error: 'Nothing to submit.' };
+  }
   if (b.suggestions.length > MAX_STRINGS_PER_SUBMISSION) {
     return { status: 400, error: `Too many strings at once (max ${MAX_STRINGS_PER_SUBMISSION}). Submit in parts.` };
   }
@@ -149,10 +152,20 @@ function validateBody(b) {
     if (!Array.isArray(s.base) || !Array.isArray(s.texts) || s.base.length !== s.texts.length || s.texts.length === 0 || s.texts.length > 6) {
       return { status: 400, error: 'Malformed submission.' };
     }
-    for (const t of s.texts) {
+    let changed = false;
+    for (let i = 0; i < s.texts.length; i++) {
+      const t = s.texts[i];
+      const base = s.base[i];
+      if (typeof base !== 'string' || base.length > MAX_STRING_CHARS) {
+        return { status: 400, error: 'Malformed submission.' };
+      }
       if (typeof t !== 'string' || t.length > MAX_STRING_CHARS) {
         return { status: 400, error: 'A translation is too long (max 4000 characters).' };
       }
+      if (t !== base) changed = true;
+    }
+    if (!changed) {
+      return { status: 400, error: 'Submission contains unchanged strings.' };
     }
   }
   return { name, contact, lang: b.lang };
@@ -194,16 +207,16 @@ export default async function handler(req, res) {
   try {
     const bucket = Math.floor(Date.now() / (HOUR_S * 1000));
     const ipHash = sha256(clientIp(req)).toString('hex').slice(0, 16);
-    if ((await bump(`rl:tr:ip:${bucket}:${ipHash}`, HOUR_S + 100)) > IP_LIMIT) {
+    if ((await bumpBy(`rl:tr:ip:${bucket}:${ipHash}`, 1, HOUR_S + 100)) > IP_LIMIT) {
       return res.status(429).json({ error: 'Too many submissions from your network, please try again later.' });
     }
-    if ((await bump(`rl:tr:global:${bucket}`, HOUR_S + 100)) > GLOBAL_LIMIT) {
+    if ((await bumpBy(`rl:tr:global:${bucket}`, 1, HOUR_S + 100)) > GLOBAL_LIMIT) {
       return res.status(503).json({ error: 'Submissions are paused for a moment because too many came in. Please try again later.' });
     }
 
-    // Pending budget per IP: a single address cannot fill the whole queue.
+    // Pending budget per IP: counts total strings queued, not submissions.
     const pendingKey = `tr:pending:${ipHash}`;
-    if ((await bump(pendingKey, PENDING_TTL_S)) > MAX_PENDING_PER_IP * b.suggestions.length) {
+    if ((await bumpBy(pendingKey, b.suggestions.length, PENDING_TTL_S)) > MAX_PENDING_PER_IP) {
       return res.status(429).json({ error: 'You have many suggestions waiting for review already. Please wait until they are processed.' });
     }
   } catch (err) {
@@ -215,7 +228,7 @@ export default async function handler(req, res) {
   // serverless instances for 30 days; without it the queue lives only in this
   // instance's memory, which is why Redis is strongly recommended here.
   const entry = {
-    id: sha256(`${Date.now()}:${powPayload}`).toString('hex').slice(0, 12),
+    id: `${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`,
     lang: checked.lang,
     name: checked.name,
     contact: checked.contact,
@@ -231,10 +244,11 @@ export default async function handler(req, res) {
       return res.status(503).json({ error: 'Submissions are temporarily unavailable. Please try again later.' });
     }
   } else {
-    const q = mem.get('tr:queue') || { n: [], exp: 0 };
+    const q = mem.get('tr:queue') || { n: [], exp: Date.now() + PENDING_TTL_S * 1000 };
+    q.exp = Date.now() + PENDING_TTL_S * 1000;
     q.n.push(JSON.stringify(entry));
     mem.set('tr:queue', q);
   }
 
-  return res.status(201).json({ ok: true, queued: b.suggestions.length });
+  return res.status(201).json({ ok: true, id: entry.id, queued: b.suggestions.length });
 }
