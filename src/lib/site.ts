@@ -10,7 +10,7 @@ export const site = {
 	name: 'PollyMC-Continued',
 	// TODO: replace when the new domain is configured
 	url: 'https://pollymc.vercel.app',
-	backgroundImage: 'https://pollymc.vercel.app/background.png',
+	ogImage: '/og.jpg',
 };
 
 export interface AssetPattern {
