@@ -327,8 +327,8 @@ import { site } from '../../../lib/site';
 		URL.revokeObjectURL(url);
 	}
 
-	async function fetchQueue(): Promise<boolean> {
-		showBanner('');
+	async function fetchQueue(preserveBanner = false): Promise<boolean> {
+		if (!preserveBanner) showBanner('');
 		try {
 			const res = await fetch(API, { credentials: 'same-origin' });
 			if (res.status === 401) {
@@ -348,7 +348,7 @@ import { site } from '../../../lib/site';
 			entries = data.entries ?? [];
 			updateLangFilterOptions();
 			renderList();
-			if (selectedId && !entries.some((e) => e.id === selectedId)) {
+			if (!selectedId || !entries.some((e) => e.id === selectedId)) {
 				selectedId = '';
 				currentDetail = null;
 				$('va-detail').innerHTML =
@@ -550,7 +550,7 @@ import { site } from '../../../lib/site';
 				showBanner(`Accepted #${currentDetail.id} and downloaded JSON.`, true);
 				selectedId = '';
 				currentDetail = null;
-				await fetchQueue();
+				await fetchQueue(true);
 			} catch {
 				showBanner('Network error while accepting submission.');
 				btn.disabled = false;
@@ -595,7 +595,7 @@ import { site } from '../../../lib/site';
 				showBanner(`Rejected and removed #${currentDetail.id} from queue.`, true);
 				selectedId = '';
 				currentDetail = null;
-				await fetchQueue();
+				await fetchQueue(true);
 			} catch {
 				showBanner('Network error while rejecting submission.');
 				btn.disabled = false;
