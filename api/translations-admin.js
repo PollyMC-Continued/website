@@ -3,10 +3,10 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 // GET  /api/translations-admin  — list pending translation suggestions, or
 //   fetch a single submission with full suggestions via ?id=<id>.
 // POST /api/translations-admin  —
-//   { action: 'login', secret }  -> set HttpOnly signed session cookie
-//   { action: 'logout' }         -> clear session cookie
-//   { id?, reject?: false }      -> accept (pop) submission and return LFJSON
-//   { id, reject: true }         -> reject and remove submission from queue
+//   { action: 'login', secret, fingerprint? } -> set HttpOnly signed session cookie
+//   { action: 'logout' }                      -> clear session cookie
+//   { id?, reject?: false }                   -> accept (pop) submission and return LFJSON
+//   { id, reject: true }                      -> reject and remove submission from queue
 //
 // Supports both Authorization: Bearer <TRANSLATION_BOT_SECRET> (for curl/CLI)
 // and an HMAC-signed HttpOnly, SameSite=Strict session cookie (for the hidden
@@ -19,8 +19,8 @@ const REDIS_ON = Boolean(REDIS_URL && REDIS_TOKEN);
 const COOKIE_NAME = 'pollymc_tr_admin';
 const SESSION_TTL_S = 12 * 60 * 60; // 12 hours
 const MAX_LIST = 200;
-const LOGIN_FAIL_LIMIT = 5;
-const LOGIN_FAIL_WINDOW_S = 15 * 60;
+const LOGIN_FAIL_LIMIT = 3;
+const LOGIN_FAIL_WINDOW_S = 30 * 60; // 30 minutes
 
 async function redis(commands) {
   const res = await fetch(`${REDIS_URL}/pipeline`, {
@@ -38,28 +38,73 @@ async function redis(commands) {
 
 // Per-instance fallback for failed login rate-limiting when Redis is absent.
 const memFails = new Map();
-async function checkAndBumpLoginFail(ipHash) {
-  const key = `rl:tr:admin_fail:${ipHash}`;
-  if (REDIS_ON) {
-    const count = Number((await redis([['INCR', key], ['EXPIRE', key, String(LOGIN_FAIL_WINDOW_S)]]))[0]);
-    return count > LOGIN_FAIL_LIMIT;
-  }
-  const now = Date.now();
-  const cur = memFails.get(key);
-  const entry = cur && cur.exp > now ? cur : { n: 0, exp: now + LOGIN_FAIL_WINDOW_S * 1000 };
-  entry.n += 1;
-  memFails.set(key, entry);
-  return entry.n > LOGIN_FAIL_LIMIT;
+
+function failKeys(ipHash, fpHash) {
+  return [`rl:tr:admin_fail:ip:${ipHash}`, `rl:tr:admin_fail:fp:${fpHash}`];
 }
 
-async function isLoginRateLimited(ipHash) {
-  const key = `rl:tr:admin_fail:${ipHash}`;
+async function getLockStatus(ipHash, fpHash) {
+  const keys = failKeys(ipHash, fpHash);
   if (REDIS_ON) {
-    const [val] = await redis([['GET', key]]);
-    return Number(val || 0) >= LOGIN_FAIL_LIMIT;
+    const res = await redis([
+      ['GET', keys[0]],
+      ['TTL', keys[0]],
+      ['GET', keys[1]],
+      ['TTL', keys[1]],
+    ]);
+    const c0 = Number(res[0] || 0);
+    const t0 = Number(res[1] || 0);
+    const c1 = Number(res[2] || 0);
+    const t1 = Number(res[3] || 0);
+    const locked = c0 >= LOGIN_FAIL_LIMIT || c1 >= LOGIN_FAIL_LIMIT;
+    const retryAfter = Math.max(c0 >= LOGIN_FAIL_LIMIT ? t0 : 0, c1 >= LOGIN_FAIL_LIMIT ? t1 : 0);
+    return { locked, retryAfter: retryAfter > 0 ? retryAfter : LOGIN_FAIL_WINDOW_S };
   }
-  const cur = memFails.get(key);
-  return Boolean(cur && cur.exp > Date.now() && cur.n >= LOGIN_FAIL_LIMIT);
+  const now = Date.now();
+  let locked = false;
+  let retryAfter = 0;
+  for (const k of keys) {
+    const cur = memFails.get(k);
+    if (cur && cur.exp > now && cur.n >= LOGIN_FAIL_LIMIT) {
+      locked = true;
+      retryAfter = Math.max(retryAfter, Math.ceil((cur.exp - now) / 1000));
+    }
+  }
+  return { locked, retryAfter: retryAfter || LOGIN_FAIL_WINDOW_S };
+}
+
+async function bumpFailKeys(ipHash, fpHash) {
+  const keys = failKeys(ipHash, fpHash);
+  if (REDIS_ON) {
+    const res = await redis([
+      ['INCR', keys[0]],
+      ['EXPIRE', keys[0], String(LOGIN_FAIL_WINDOW_S)],
+      ['INCR', keys[1]],
+      ['EXPIRE', keys[1], String(LOGIN_FAIL_WINDOW_S)],
+    ]);
+    const maxCount = Math.max(Number(res[0] || 0), Number(res[2] || 0));
+    return maxCount;
+  }
+  const now = Date.now();
+  let maxCount = 0;
+  for (const k of keys) {
+    const cur = memFails.get(k);
+    const entry = cur && cur.exp > now ? cur : { n: 0, exp: now + LOGIN_FAIL_WINDOW_S * 1000 };
+    entry.n += 1;
+    entry.exp = now + LOGIN_FAIL_WINDOW_S * 1000;
+    memFails.set(k, entry);
+    if (entry.n > maxCount) maxCount = entry.n;
+  }
+  return maxCount;
+}
+
+async function clearFailKeys(ipHash, fpHash) {
+  const keys = failKeys(ipHash, fpHash);
+  if (REDIS_ON) {
+    await redis([['DEL', keys[0], keys[1]]]);
+    return;
+  }
+  for (const k of keys) memFails.delete(k);
 }
 
 function sha256(data) {
@@ -74,6 +119,21 @@ function clientIp(req) {
   const h = req.headers;
   const raw = h['x-vercel-forwarded-for'] || h['x-real-ip'] || h['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
   return String(raw).split(',')[0].trim();
+}
+
+function deviceFingerprintHash(req, body) {
+  const h = req.headers || {};
+  const clientFp = typeof body?.fingerprint === 'string'
+    ? body.fingerprint.slice(0, 128)
+    : String(h['x-device-fingerprint'] || '').slice(0, 128);
+  const serverSignals = [
+    h['user-agent'] || '',
+    h['accept-language'] || '',
+    h['sec-ch-ua'] || '',
+    h['sec-ch-ua-platform'] || '',
+    clientFp,
+  ].join('|');
+  return sha256(serverSignals).toString('hex').slice(0, 24);
 }
 
 function parseCookies(req) {
@@ -172,9 +232,16 @@ export default async function handler(req, res) {
     if (!secret) return res.status(500).json({ error: 'Admin secret is not configured on the server.' });
 
     const ipHash = sha256(clientIp(req)).toString('hex').slice(0, 16);
+    const fpHash = deviceFingerprintHash(req, body);
+
     try {
-      if (await isLoginRateLimited(ipHash)) {
-        return res.status(429).json({ error: 'Too many failed attempts. Wait 15 minutes and try again.' });
+      const status = await getLockStatus(ipHash, fpHash);
+      if (status.locked) {
+        return res.status(429).json({
+          error: 'Too many failed attempts. Locked for 30 minutes.',
+          locked: true,
+          retryAfter: status.retryAfter,
+        });
       }
     } catch (err) {
       console.error(`Login rate-limit check failed: ${err.message}`);
@@ -182,12 +249,30 @@ export default async function handler(req, res) {
 
     const given = typeof body.secret === 'string' ? body.secret : '';
     if (!given || !constantTimeEquals(given, secret)) {
+      let attempts = 1;
       try {
-        await checkAndBumpLoginFail(ipHash);
+        attempts = await bumpFailKeys(ipHash, fpHash);
       } catch {
         // ignore rate-limit write errors
       }
-      return res.status(401).json({ error: 'Invalid admin key.' });
+      if (attempts >= LOGIN_FAIL_LIMIT) {
+        return res.status(429).json({
+          error: 'Too many failed attempts. Locked for 30 minutes.',
+          locked: true,
+          retryAfter: LOGIN_FAIL_WINDOW_S,
+        });
+      }
+      const remaining = Math.max(0, LOGIN_FAIL_LIMIT - attempts);
+      return res.status(401).json({
+        error: `Wrong pass (${remaining} ${remaining === 1 ? 'try' : 'tries'} left).`,
+        remaining,
+      });
+    }
+
+    try {
+      await clearFailKeys(ipHash, fpHash);
+    } catch {
+      // non-fatal
     }
 
     const exp = Math.floor(Date.now() / 1000) + SESSION_TTL_S;

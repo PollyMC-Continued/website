@@ -20,14 +20,14 @@ import { site } from '../../../lib/site';
 			</div>
 			<h1 class="sec-h">Restricted Console</h1>
 			<p class="va-muted">Enter the maintainer key to unlock the translation review queue.</p>
-			<form id="va-login-form" class="va-login-form">
+			<form id="va-login-form" class="va-login-form" novalidate>
+				<p id="va-login-err" class="va-error" role="alert"></p>
 				<label class="va-field">
 					<span class="visually-hidden">Maintainer key</span>
-					<div class="va-pw-wrap">
+					<div id="va-pw-wrap" class="va-pw-wrap">
 						<input
 							id="va-secret"
 							type="password"
-							required
 							autocomplete="current-password"
 							placeholder="Maintainer key"
 						/>
@@ -38,7 +38,6 @@ import { site } from '../../../lib/site';
 				</label>
 				<button type="submit" id="va-login-btn" class="button">Unlock</button>
 			</form>
-			<p id="va-login-err" class="va-error" role="alert"></p>
 		</section>
 
 		<!-- Authenticated Console -->
@@ -371,32 +370,125 @@ import { site } from '../../../lib/site';
 		btn.textContent = show ? 'Hide' : 'Show';
 	});
 
+	let lockTimer: number | null = null;
+
+	function setLoginError(msg: string): void {
+		const errEl = $('va-login-err');
+		const wrap = $('va-pw-wrap');
+		errEl.textContent = msg;
+		wrap.classList.toggle('is-error', Boolean(msg));
+		$('va-secret').setAttribute('aria-invalid', msg ? 'true' : 'false');
+	}
+
+	function startLockCountdown(seconds: number): void {
+		if (lockTimer !== null) clearInterval(lockTimer);
+		const btn = $('va-login-btn') as HTMLButtonElement;
+		const input = $('va-secret') as HTMLInputElement;
+		let left = Math.max(1, Math.floor(seconds));
+		const render = () => {
+			const mins = Math.floor(left / 60);
+			const secs = String(left % 60).padStart(2, '0');
+			setLoginError(`Locked for ${mins}:${secs} after too many failed tries.`);
+			btn.disabled = true;
+			input.disabled = true;
+		};
+		render();
+		lockTimer = window.setInterval(() => {
+			left -= 1;
+			if (left <= 0) {
+				if (lockTimer !== null) clearInterval(lockTimer);
+				lockTimer = null;
+				btn.disabled = false;
+				input.disabled = false;
+				setLoginError('');
+				return;
+			}
+			render();
+		}, 1000);
+	}
+
+	async function getDeviceFingerprint(): Promise<string> {
+		let canvasSig = '';
+		try {
+			const canvas = document.createElement('canvas');
+			canvas.width = 200;
+			canvas.height = 40;
+			const ctx = canvas.getContext('2d');
+			if (ctx) {
+				ctx.textBaseline = 'top';
+				ctx.font = '14px sans-serif';
+				ctx.fillStyle = '#92d600';
+				ctx.fillText('pollymc-fp-v1', 2, 2);
+				canvasSig = canvas.toDataURL();
+			}
+		} catch {
+			// canvas blocked
+		}
+		const raw = [
+			navigator.userAgent,
+			navigator.language,
+			(navigator.languages || []).join(','),
+			navigator.platform || '',
+			String(navigator.hardwareConcurrency || ''),
+			String((navigator as unknown as { deviceMemory?: number }).deviceMemory || ''),
+			`${screen.width}x${screen.height}x${screen.colorDepth}`,
+			Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+			canvasSig,
+		].join('|');
+		const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+		return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+	}
+
+	$('va-secret').addEventListener('input', () => {
+		if (lockTimer === null) setLoginError('');
+	});
+
 	$('va-login-form').addEventListener('submit', async (e) => {
 		e.preventDefault();
+		if (lockTimer !== null) return;
 		const btn = $('va-login-btn') as HTMLButtonElement;
-		const errEl = $('va-login-err');
 		const secretInput = $('va-secret') as HTMLInputElement;
-		errEl.textContent = '';
+		const val = secretInput.value.trim();
+		if (!val) {
+			setLoginError('Please fill the field.');
+			secretInput.focus();
+			return;
+		}
+		setLoginError('');
 		btn.disabled = true;
 		btn.textContent = 'Verifying…';
 		try {
+			const fingerprint = await getDeviceFingerprint();
 			const res = await fetch(API, {
 				method: 'POST',
 				credentials: 'same-origin',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ action: 'login', secret: secretInput.value }),
+				headers: {
+					'Content-Type': 'application/json',
+					'X-Device-Fingerprint': fingerprint,
+				},
+				body: JSON.stringify({ action: 'login', secret: secretInput.value, fingerprint }),
 			});
-			const data = (await res.json().catch(() => ({}))) as { error?: string };
+			const data = (await res.json().catch(() => ({}))) as {
+				error?: string;
+				locked?: boolean;
+				retryAfter?: number;
+			};
+			if (res.status === 429 || data.locked) {
+				startLockCountdown(data.retryAfter ?? 1800);
+				return;
+			}
 			if (!res.ok) {
-				errEl.textContent = data.error || 'Authentication failed.';
+				setLoginError(data.error || 'Wrong pass.');
+				secretInput.focus();
 				return;
 			}
 			secretInput.value = '';
+			setLoginError('');
 			await fetchQueue();
 		} catch {
-			errEl.textContent = 'Network error while signing in.';
+			setLoginError('Network error while signing in.');
 		} finally {
-			btn.disabled = false;
+			if (lockTimer === null) btn.disabled = false;
 			btn.textContent = 'Unlock';
 		}
 	});
@@ -598,6 +690,11 @@ import { site } from '../../../lib/site';
 	.va-pw-wrap:focus-within {
 		border-color: var(--primary);
 	}
+	.va-pw-wrap.is-error,
+	.va-pw-wrap.is-error:focus-within {
+		border-color: #ff5c5c;
+		box-shadow: 0 0 0 2px rgba(255, 92, 92, 0.2);
+	}
 	.va-pw-toggle {
 		background: transparent;
 		border: 0;
@@ -611,8 +708,10 @@ import { site } from '../../../lib/site';
 		color: var(--primary-text);
 	}
 	.va-error {
-		color: #ffaf97;
-		font-size: 0.92em;
+		color: #ff7a7a;
+		font-size: 0.9em;
+		font-weight: 500;
+		text-align: left;
 		min-height: 1.2em;
 		margin: 0;
 	}
