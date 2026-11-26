@@ -1,0 +1,635 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { site } from '../../lib/site';
+
+const description =
+	'Contribute translations for the PollyMC-Continued launcher: edit only the strings that still need work, no GitHub account required.';
+---
+
+<Layout
+	title="Translation editor"
+	description={description}
+	canonical={`${site.url}/translation/editor/`}
+	active="translations"
+	noindex
+>
+	<main id="main" class="container">
+		<div class="content" id="editor-root">
+			<div class="ed-head">
+				<h1 class="sec-h">Translation editor</h1>
+				<a class="button secondary" href="/translation/">Back to languages</a>
+			</div>
+			<p id="ed-status" class="ed-status" role="status">Loading…</p>
+
+			<div id="ed-bar" class="ed-bar hidden">
+				<div class="ed-progress">
+					<span id="ed-progress-fill"></span>
+				</div>
+				<div class="ed-stats">
+					<span id="ed-stats-text"></span>
+				</div>
+				<div class="ed-filter">
+					<label>
+						<span class="visually-hidden">Search strings</span>
+						<input id="ed-search" type="search" placeholder="Search source or context…" autocomplete="off" />
+					</label>
+					<label class="ed-only-changed">
+						<input type="checkbox" id="ed-only-changed" />
+						<span>Only my changes</span>
+					</label>
+				</div>
+			</div>
+
+			<ol id="ed-strings" class="ed-strings"></ol>
+
+			<div id="ed-submit" class="ed-submit hidden">
+				<h2>Your details</h2>
+				<p class="ed-note">
+					Your name is required and is credited when your contribution is merged. The contact address is
+					optional and kept private: a reviewer may use it to ask about your translation. Neither is
+					published anywhere.
+				</p>
+				<form id="ed-form" class="ed-form">
+					<label class="ed-field">
+						<span>Name (required)</span>
+						<input id="ed-name" type="text" required minlength="2" maxlength="60" autocomplete="name" />
+					</label>
+					<label class="ed-field">
+						<span>Contact (optional, private)</span>
+						<input id="ed-contact" type="text" maxlength="80" autocomplete="email" placeholder="email, Discord, …" />
+					</label>
+					<label class="ed-consent">
+						<input id="ed-consent" type="checkbox" required />
+						<span>
+							My contributions are licensed under GPL-3.0, like the launcher itself, and will be reviewed
+							before they are merged.
+						</span>
+					</label>
+					<button class="button is-big" type="submit" id="ed-send">Submit for review</button>
+				</form>
+				<p id="ed-result" class="ed-result" role="status"></p>
+			</div>
+		</div>
+	</main>
+</Layout>
+
+<script>
+	import { languageName, RTL_LANGUAGES } from '../../lib/languages';
+
+	// ------------------------------------------------------------------ types
+	interface Message {
+		index: number; // position within the file, used as the stable id
+		context: string;
+		source: string;
+		comment: string;
+		obsolete: boolean; // vanished or obsolete entries are not shown
+		unfinished: boolean;
+		numerus: boolean;
+		// one entry per plural form; singular strings have exactly one
+		texts: string[];
+		edited: string[] | null;
+	}
+
+	// --------------------------------------------------------------- helpers
+	const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+
+	function escapeHtml(text: string): string {
+		return text
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;');
+	}
+
+	// Placeholder tokens, mirrored from scripts/validate.py in the translations repo:
+	// %n and %1..%9 (%L1 counts as %1), entities like &amp;, and HTML tag names.
+	const PERCENT_RE = /%(L\d+|\d+|n)/g;
+	const ENTITY_RE = /&[a-zA-Z]+;/g;
+	const TAG_RE = /<\/?[a-zA-Z][a-zA-Z0-9]*[^>]*>/g;
+	const TAG_NAME_RE = /<\/?\s*([a-zA-Z][a-zA-Z0-9]*)/;
+
+	function placeholders(text: string): string[] {
+		const tokens: string[] = [];
+		for (const m of text.matchAll(PERCENT_RE)) tokens.push('%' + m[1].replace(/^L/, ''));
+		for (const m of text.matchAll(ENTITY_RE)) tokens.push(m[0]);
+		for (const m of text.matchAll(TAG_RE)) {
+			const name = TAG_NAME_RE.exec(m[0]);
+			if (name) tokens.push(`<${name[1]}>`);
+		}
+		return tokens;
+	}
+
+	function lint(source: string, target: string): string | null {
+		if (!target.trim()) return null; // empty is legal (still unfinished)
+		const want = placeholders(source);
+		const got = placeholders(target);
+		const sorted = (xs: string[]) => [...xs].sort().join(',');
+		if (sorted(want) !== sorted(got)) {
+			return `Placeholders differ: the source has ${want.join(' ') || 'none'}, your text has ${got.join(' ') || 'none'}.`;
+		}
+		return null;
+	}
+
+	// ----------------------------------------------------------- .ts parsing
+	// A hand-rolled reader over DOMParser output. lupdate writes a very regular
+	// document, so walking it is exact, and a fraction of a full XML parser.
+	function parseTs(xml: string): Message[] {
+		const doc = new DOMParser().parseFromString(xml, 'application/xml');
+		if (doc.querySelector('parsererror')) throw new Error('The translation file is not valid XML.');
+		const out: Message[] = [];
+		doc.querySelectorAll('context').forEach((context) => {
+			const ctxName = context.querySelector('name')?.textContent ?? '';
+			context.querySelectorAll(':scope > message').forEach((message) => {
+				const tr = message.querySelector(':scope > translation');
+				if (!tr) return;
+				const state = tr.getAttribute('type') ?? '';
+				const obsolete = state === 'vanished' || state === 'obsolete';
+				const numerus = message.getAttribute('numerus') === 'yes';
+				const forms = [...tr.querySelectorAll(':scope > numerusform')];
+				let texts: string[];
+				if (numerus && forms.length > 0) {
+					texts = forms.map((f) => f.textContent ?? '');
+				} else {
+					texts = [tr.textContent ?? ''];
+				}
+				out.push({
+					index: out.length,
+					context: ctxName,
+					source: message.querySelector(':scope > source')?.textContent ?? '',
+					comment: message.querySelector(':scope > comment')?.textContent ?? '',
+					obsolete,
+					unfinished: state === 'unfinished' || state === 'fuzzy',
+					numerus,
+					texts,
+					edited: null,
+				});
+			});
+		});
+		return out;
+	}
+
+	// Reverse of parseTs: writes back only <translation> texts. Used by the
+	// draft preview and the maintainer apply step shares the same shape.
+	interface Suggestion {
+		index: number;
+		texts: string[];
+	}
+
+	// ------------------------------------------------------------ UI wiring
+	let lang = '';
+	let messages: Message[] = [];
+	const draftKey = () => `pollymc:translation-draft:${lang}`;
+
+	async function loadLanguage(): Promise<void> {
+		const code = new URLSearchParams(location.search).get('lang') ?? '';
+		if (!/^[\w@.-]{1,30}$/.test(code)) {
+			$('ed-status').textContent =
+				'No language selected. Pick one from the list of languages and press Translate.';
+			return;
+		}
+		lang = code;
+		$('ed-status').textContent = `Loading ${languageName(code)}…`;
+		try {
+			const res = await fetch(`/translation/sources/${encodeURIComponent(code)}.ts`);
+			if (!res.ok) throw new Error(`file -> ${res.status}`);
+			messages = parseTs(await res.text());
+			restoreDraft();
+			showMessages();
+			$('ed-status').classList.add('hidden');
+			$('ed-bar').classList.remove('hidden');
+			$('ed-submit').classList.remove('hidden');
+			window.dispatchEvent(new CustomEvent('ed:loaded'));
+		} catch (err) {
+			$('ed-status').textContent =
+				'That language could not be loaded. Go back to the list of languages and try again.';
+		}
+	}
+
+	function visible(): Message[] {
+		const q = ($('ed-search') as HTMLInputElement).value.trim().toLowerCase();
+		const onlyChanged = ($('ed-only-changed') as HTMLInputElement).checked;
+		return messages.filter((m) => {
+			if (m.obsolete || !m.unfinished) return false;
+			if (onlyChanged && !m.edited) return false;
+			if (q && !`${m.source} ${m.context} ${m.comment}`.toLowerCase().includes(q)) return false;
+			return true;
+		});
+	}
+
+	function card(m: Message): HTMLLIElement {
+		const li = document.createElement('li');
+		li.className = 'ed-string';
+		const rtl = RTL_LANGUAGES.has(lang) ? ' dir="rtl"' : '';
+		const forms = m.texts
+			.map((t, i) => {
+				const label = m.numerus ? `Plural form ${i + 1}` : 'Translation';
+				return `
+					<label class="ed-form-row">
+						<span class="ed-form-label">${label}</span>
+						<textarea
+							class="ed-input${m.numerus ? '' : ' ed-single'}"
+							rows="1"
+							dir="auto"${rtl}
+							data-index="${m.index}" data-form="${i}"
+							spellcheck="false">${escapeHtml(m.edited ? m.edited[i] : t)}</textarea>
+					</label>`;
+			})
+			.join('');
+		li.innerHTML = `
+			<div class="ed-src-head">
+				<code class="ed-context">${escapeHtml(m.context)}</code>
+			</div>
+			<div class="ed-source" dir="auto">${escapeHtml(m.source) || '<em>(empty source)</em>'}</div>
+			${m.comment ? `<div class="ed-comment" dir="auto">${escapeHtml(m.comment)}</div>` : ''}
+			<div class="ed-forms">${forms}</div>
+			<div class="ed-warn" data-warn="${m.index}"></div>`;
+		return li;
+	}
+
+	function showMessages(): void {
+		const list = $('ed-strings');
+		list.textContent = '';
+		const rows = visible();
+		if (rows.length === 0) {
+			list.innerHTML = `<li class="ed-empty">Nothing left to do here: no unfinished strings${
+				$('ed-only-changed').checked ? ' with your changes' : ''
+			} match. Thank you!</li>`;
+		} else {
+			for (const m of rows) list.append(card(m));
+		}
+		updateStats();
+	}
+
+	function updateStats(): void {
+		const unfinished = messages.filter((m) => m.unfinished && !m.obsolete).length;
+		const changed = messages.filter((m) => m.edited).length;
+		$('ed-stats-text').textContent =
+			`${changed} of ${unfinished} unfinished strings touched · ${messages.length} total`;
+		const pct = unfinished > 0 ? Math.round((changed / unfinished) * 100) : 100;
+		($('ed-progress-fill') as HTMLElement).style.width = `${pct}%`;
+	}
+
+	// Edits update the message in place, lint, and persist a draft.
+	function onInput(e: Event): void {
+		const ta = e.target as HTMLTextAreaElement;
+		const m = messages[Number(ta.dataset.index)];
+		if (!m) return;
+		if (!m.edited) m.edited = [...m.texts];
+		m.edited[Number(ta.dataset.form)] = ta.value;
+		autoGrow(ta);
+		const warn = document.querySelector(`.ed-warn[data-warn="${m.index}"]`) as HTMLElement;
+		if (warn) {
+			// every form is linted against the same source; plural forms are
+			// compared to the full source text (that is what validate.py does).
+			const problems = m.edited.map((t, i) => lint(m.source, t)).filter(Boolean) as string[];
+			warn.textContent = problems.join(' ');
+			ta.setAttribute('aria-invalid', problems.length > 0 ? 'true' : 'false');
+		}
+		saveDraft();
+		updateStats();
+	}
+
+	function autoGrow(ta: HTMLTextAreaElement): void {
+		ta.style.height = 'auto';
+		ta.style.height = `${ta.scrollHeight + 2}px`;
+	}
+
+	function saveDraft(): void {
+		if (!lang) return;
+		const edited: Suggestion[] = messages
+			.filter((m) => m.edited)
+			.map((m) => ({ index: m.index, texts: m.edited as string[] }));
+		try {
+			localStorage.setItem(draftKey(), JSON.stringify({ when: Date.now(), edited }));
+		} catch {
+			// storage full or unavailable: keep working without the draft
+		}
+	}
+
+	function restoreDraft(): void {
+		try {
+			const raw = localStorage.getItem(draftKey());
+			if (!raw) return;
+			const { edited } = JSON.parse(raw) as { edited: Suggestion[] };
+			for (const s of edited) {
+				const m = messages[s.index];
+				if (m && m.unfinished && !m.obsolete) m.edited = [...s.texts];
+			}
+		} catch {
+			// a malformed draft is ignored, not fatal
+		}
+	}
+
+	// ------------------------------------------------------------------ PoW
+	// Same proof-of-work as the launcher's bug reporter: find a nonce so that
+	// SHA-256("<time>:<nonce>:<sha256 of the payload>") starts with N zero bits.
+	const sha256Hex = async (data: string): Promise<string> => {
+		const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+		return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
+	};
+
+	async function solvePow(payload: string, bits: number): Promise<{ powTime: string; powNonce: string }> {
+		const digest = await sha256Hex(payload);
+		const ts = Math.floor(Date.now() / 1000);
+		for (let nonce = 0; ; nonce++) {
+			const hash = await sha256Hex(`${ts}:${nonce}:${digest}`);
+			// count leading zero bits of the hex string, the same way the
+			// server does over the raw digest bytes
+			let zeroBits = 0;
+			for (const ch of hash) {
+				if (ch === '0') {
+					zeroBits += 4;
+					continue;
+				}
+				const nibble = Number.parseInt(ch, 16);
+				zeroBits += Math.clz32(nibble) - 28; // 1..15 -> 3..0 extra bits
+				break;
+			}
+			if (zeroBits >= bits) {
+				return { powTime: String(ts), powNonce: String(nonce) };
+			}
+		}
+	}
+
+	// ------------------------------------------------------------- submission
+	async function submit(e: SubmitEvent): Promise<void> {
+		e.preventDefault();
+		const result = $('ed-result');
+		const send = $('ed-send') as HTMLButtonElement;
+		const edited = messages.filter((m) => m.edited);
+		if (edited.length === 0) {
+			result.textContent = 'Nothing to submit: translate at least one string first.';
+			return;
+		}
+		const problems = edited.flatMap((m) =>
+			m.edited!.map((t) => lint(m.source, t)).filter(Boolean) as string[]
+		);
+		if (problems.length > 0) {
+			result.textContent = 'Some translations are missing placeholders. Fix the highlighted warnings first.';
+			return;
+		}
+
+		const body = {
+			lang,
+			name: ($('ed-name') as HTMLInputElement).value.trim(),
+			contact: ($('ed-contact') as HTMLInputElement).value.trim(),
+			// every suggestion carries the text the user started from, so the
+			// server can check it against the live file and detect races.
+			suggestions: edited.map((m) => ({ index: m.index, base: m.texts, texts: m.edited })),
+		};
+
+		send.disabled = true;
+		send.textContent = 'Working…';
+		result.textContent = '';
+		try {
+		// The PoW is computed over the suggestions array exactly as the server
+		// recomputes it, so it cannot be reused for another submission.
+		const pow = await solvePow(JSON.stringify(body.suggestions), 20);
+			const res = await fetch('/api/translations', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ ...body, ...pow }),
+			});
+			const data = (await res.json().catch(() => ({}))) as { error?: string; queued?: number };
+			if (res.ok) {
+				result.classList.add('ed-ok');
+				result.textContent = `Thank you! ${data.queued ?? edited.length} string(s) are queued for review. Once a maintainer approves them they become a pull request in the translations repository.`;
+				localStorage.removeItem(draftKey());
+				send.textContent = 'Submitted';
+				showMessages();
+			} else {
+				result.textContent = data.error || 'The submission could not be sent. Please try again later.';
+			}
+		} catch {
+			result.textContent = 'The submission could not be sent. Please try again later.';
+		} finally {
+			send.disabled = false;
+			send.textContent = 'Submit for review';
+		}
+	}
+
+	// ------------------------------------------------------------------ boot
+	$('ed-strings').addEventListener('input', onInput);
+	$('ed-search').addEventListener('input', showMessages);
+	$('ed-only-changed').addEventListener('change', showMessages);
+	$('ed-form').addEventListener('submit', submit);
+	window.addEventListener('ed:loaded', () => {
+		document.querySelectorAll<HTMLTextAreaElement>('.ed-input').forEach(autoGrow);
+	});
+	loadLanguage();
+</script>
+
+<style is:global>
+	/* Editor styles are global: the string cards are created by client-side
+	   JavaScript, so Astro's scoped data-astro-cid attributes never land on
+	   them. Class names are prefixed ed- to stay collision-free. */
+	.ed-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5em;
+	}
+	.ed-status {
+		color: var(--muted);
+	}
+	.ed-bar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75em 1.25em;
+		align-items: center;
+		margin: 1.25em 0 0.5em;
+	}
+	.ed-progress {
+		flex: 0 1 10rem;
+		height: 0.5em;
+		width: 100%;
+		max-width: 14rem;
+		background: var(--accent-light);
+		border-radius: 999px;
+		overflow: hidden;
+	}
+	.ed-progress span {
+		display: block;
+		height: 100%;
+		width: 0;
+		background: var(--primary);
+		border-radius: 999px;
+		transition: width 200ms ease;
+	}
+	.ed-stats {
+		color: var(--muted);
+		font-size: 0.9em;
+	}
+	.ed-filter {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5em 1em;
+		align-items: center;
+		margin-left: auto;
+	}
+	.ed-filter input[type='search'] {
+		padding: 0.5em 0.9em;
+		font: inherit;
+		color: var(--primary-text);
+		background: var(--accent);
+		border: 1px solid var(--accent-light);
+		border-radius: 8px;
+		width: 100%;
+	}
+	.ed-only-changed {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4em;
+		color: var(--muted);
+		font-size: 0.9em;
+		white-space: nowrap;
+	}
+	.ed-strings {
+		list-style: none;
+		margin: 1em 0 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1em;
+	}
+	.ed-empty {
+		color: var(--muted);
+		padding: 1.25em;
+		background: var(--accent);
+		border: 1px dashed var(--accent-light);
+		border-radius: var(--radius);
+		text-align: center;
+	}
+	.ed-string {
+		padding: 1.1em 1.25em;
+		background: var(--accent);
+		border: 1px solid var(--accent-light);
+		border-radius: var(--radius);
+		display: flex;
+		flex-direction: column;
+		gap: 0.5em;
+	}
+	.ed-src-head {
+		display: flex;
+		gap: 0.75em;
+		align-items: center;
+	}
+	.ed-context {
+		color: var(--primary);
+		font-size: 0.8em;
+		overflow-wrap: anywhere;
+	}
+	.ed-source {
+		font-weight: 600;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		color: var(--primary-text);
+		max-height: 9.5rem;
+		overflow-y: auto;
+		scrollbar-width: thin;
+	}
+	.ed-comment {
+		color: var(--muted);
+		font-size: 0.88em;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+	.ed-forms {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5em;
+	}
+	.ed-form-row {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25em;
+		width: 100%;
+	}
+	.ed-form-label {
+		font-size: 0.8em;
+		color: var(--muted);
+		font-weight: 600;
+	}
+	.ed-input {
+		width: 100%;
+		padding: 0.55em 0.8em;
+		font: inherit;
+		line-height: 1.5;
+		color: var(--primary-text);
+		background: var(--page);
+		border: 1px solid var(--accent-light);
+		border-radius: 8px;
+		resize: none;
+		overflow: hidden;
+		min-height: 2.4em;
+	}
+	.ed-input:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 0;
+	}
+	.ed-input[aria-invalid='true'] {
+		border-color: #ffaf97;
+	}
+	.ed-warn {
+		color: #ffaf97;
+		font-size: 0.85em;
+		min-height: 0;
+	}
+	.ed-submit {
+		margin-top: 1.5em;
+		padding-top: 1.5em;
+		border-top: 1px solid var(--accent-light);
+		h2 {
+			font-size: 1.3rem;
+			margin: 0 0 0.4em;
+		}
+	}
+	.ed-note {
+		color: var(--muted);
+		font-size: 0.92em;
+	}
+	.ed-form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9em;
+		max-width: 32rem;
+	}
+	.ed-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3em;
+		span {
+			font-size: 0.9em;
+			color: var(--muted);
+			font-weight: 600;
+		}
+		input {
+			padding: 0.55em 0.8em;
+			font: inherit;
+			color: var(--primary-text);
+			background: var(--accent);
+			border: 1px solid var(--accent-light);
+			border-radius: 8px;
+		}
+	}
+	.ed-consent {
+		display: flex;
+		gap: 0.5em;
+		align-items: flex-start;
+		color: var(--muted);
+		font-size: 0.9em;
+		input {
+			margin-top: 0.3em;
+		}
+	}
+	.ed-result {
+		margin: 0.75em 0 0;
+		color: var(--muted);
+		&.ed-ok {
+			color: var(--primary);
+			font-weight: 600;
+		}
+	}
+</style>

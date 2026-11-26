@@ -1,0 +1,284 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { site } from '../../lib/site';
+
+const description =
+	'Help translate the PollyMC-Continued launcher into 92 languages: browse progress, download language files, or contribute translations without a GitHub account.';
+---
+
+<Layout
+	title="Translations"
+	description={description}
+	canonical={`${site.url}/translation/`}
+	active="translations"
+>
+	<main id="main" class="container">
+		<div class="content">
+			<h1 class="sec-h">Translations</h1>
+			<p class="t-intro">
+				The launcher speaks 92 languages thanks to its community. The translation sources live in the
+				<a href="https://github.com/PollyMC-Continued/translations">translations repository</a>;
+				this page shows how complete each language is and lets you contribute without a GitHub
+				account.
+			</p>
+
+			<div class="t-toolbar" role="search">
+				<label class="t-search-wrap">
+					<span class="visually-hidden" for="t-search">Search languages</span>
+					<input
+						id="t-search"
+						type="search"
+						placeholder="Search a language (English, de, pt_BR…)"
+						autocomplete="off"
+					/>
+				</label>
+				<label class="t-sort">
+					<span class="visually-hidden">Sort by</span>
+					<select id="t-sort">
+						<option value="progress" selected>Most unfinished first</option>
+						<option value="name">Name (A-Z)</option>
+						<option value="code">Language code</option>
+					</select>
+				</label>
+			</div>
+
+			<ul id="t-languages" class="t-languages" aria-live="polite">
+				<li class="t-loading" aria-hidden="true">Loading languages…</li>
+			</ul>
+
+			<noscript>
+				<p class="t-noscript">
+					The list of languages is loaded from an index file in your browser and needs JavaScript.
+					Every language file can also be downloaded directly from the
+					<a href="https://github.com/PollyMC-Continued/translations">translations repository</a>.
+				</p>
+			</noscript>
+		</div>
+
+		<div class="infobox">
+			<h1>How to contribute</h1>
+			<p>
+				Pick your language above and press <strong>Translate</strong>. The editor shows only the strings
+				that still need work, checks placeholders as you type, and saves a draft in your browser while
+				you work. Submitting asks for a name (required, used for credit) and an optional contact address
+				that is kept private and only used if a reviewer needs to ask about your change.
+			</p>
+			<p>
+				Submissions are queued for review by a maintainer and become
+				<a href="https://github.com/PollyMC-Continued/translations/pulls">pull requests</a>;
+				nothing is written to the repository until a human has approved it, so there is no way to
+				break anything. A GitHub account is never required.
+			</p>
+			<p>
+				If you prefer working with the files directly, read the
+				<a href="https://raw.githubusercontent.com/PollyMC-Continued/translations/main/CONTRIBUTING.md"
+					>contributing guide</a
+				> and open a normal pull request.
+			</p>
+		</div>
+	</main>
+</Layout>
+
+<script>
+	import { languageName, RTL_LANGUAGES } from '../../lib/languages';
+
+	interface IndexEntry {
+		file: string;
+		translated: number;
+		untranslated: number;
+		fuzzy: number;
+		size: number;
+	}
+
+	const list = document.querySelector<HTMLUListElement>('#t-languages');
+	const search = document.querySelector<HTMLInputElement>('#t-search');
+	const sort = document.querySelector<HTMLSelectElement>('#t-sort');
+
+	function pct(done: number, rest: number): number {
+		const total = done + rest;
+		return total > 0 ? Math.round((done / total) * 100) : 0;
+	}
+
+	function languageCode(entry: string): string {
+		// file is "mmc_<code>.qm"
+		const m = /^mmc_(.+)\.qm$/.exec(entry);
+		return m ? m[1] : entry;
+	}
+
+	function escapeHtml(text: string): string {
+		return text.replace(/[&<>"']/g, (c) => {
+			return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c;
+		});
+	}
+
+	function row(code: string, e: IndexEntry): HTMLLIElement {
+		const li = document.createElement('li');
+		li.className = 't-lang';
+		li.dataset.code = code;
+		li.dataset.search = `${languageName(code)} ${code}`.toLowerCase();
+
+		const name = escapeHtml(languageName(code));
+		const rtl = RTL_LANGUAGES.has(code) ? ' dir="rtl"' : '';
+		const done = pct(e.translated, e.untranslated);
+		const total = e.translated + e.untranslated;
+		const status = e.untranslated === 0 ? 'Complete' : `${e.untranslated} unfinished`;
+
+		li.innerHTML = `
+			<div class="t-lang-head">
+				<span class="t-lang-name"${rtl}>${name}</span>
+				<code class="t-lang-code">${escapeHtml(code)}</code>
+			</div>
+			<div class="t-bar" role="img" aria-label="${done}% translated">
+				<span class="t-bar-fill" style="width:${done}%"></span>
+			</div>
+			<div class="t-lang-meta">
+				<span>${done}% · ${status}</span>
+				<span>${total.toLocaleString()} strings</span>
+			</div>
+			<div class="t-lang-actions">
+				<a class="button t-translate" href="/translation/editor/?lang=${encodeURIComponent(code)}">Translate</a>
+				<a class="button secondary t-download" href="/translation/sources/${encodeURIComponent(code)}.ts"
+					download="${encodeURIComponent(code)}.ts">Source (.ts)</a>
+				<a class="button secondary t-qm" href="/translation/${encodeURIComponent(e.file)}" download>Compiled (.qm)</a>
+			</div>`;
+		return li;
+	}
+
+	function render(entries: [string, IndexEntry][]): void {
+		if (!list) return;
+		list.textContent = '';
+		const q = (search?.value ?? '').trim().toLowerCase();
+		const mode = sort?.value ?? 'progress';
+		let rows = entries.filter(([code]) => !q || `${languageName(code)} ${code}`.toLowerCase().includes(q));
+		rows.sort((a, b) => {
+			if (mode === 'name') return languageName(a[0]).localeCompare(languageName(b[0]));
+			if (mode === 'code') return a[0].localeCompare(b[0]);
+			return b[1].untranslated - a[1].untranslated; // most unfinished first
+		});
+		if (rows.length === 0) {
+			list.innerHTML = '<li class="t-loading">No language matches that search.</li>';
+			return;
+		}
+		for (const [code, e] of rows) list.append(row(code, e));
+	}
+
+	async function run(): Promise<void> {
+		if (!list) return;
+		try {
+			const res = await fetch('/translation/index_v2.json');
+			if (!res.ok) throw new Error(`index -> ${res.status}`);
+			const data = (await res.json()) as { languages?: Record<string, IndexEntry> };
+			const entries = Object.entries(data.languages ?? {}).map(([code, e]) => [code, e] as [string, IndexEntry]);
+			render(entries);
+			search?.addEventListener('input', () => render(entries));
+			sort?.addEventListener('change', () => render(entries));
+		} catch {
+			list.innerHTML = `<li class="t-loading">The language index could not be loaded. The
+				<a href="https://github.com/PollyMC-Continued/translations">translations repository</a> lists every language too.</li>`;
+		}
+	}
+
+	run();
+</script>
+
+<style is:global>
+	/* Translation list styles are global: the language cards are created by
+	   client-side JavaScript, so Astro's scoped attributes never land on them.
+	   Class names are prefixed t- to stay collision-free. */
+	.t-intro {
+		color: var(--muted);
+		max-width: 60ch;
+	}
+	.t-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75em;
+		align-items: center;
+		margin: 1.25em 0 1em;
+	}
+	.t-search-wrap {
+		flex: 1 1 16rem;
+	}
+	.t-search-wrap input,
+	.t-sort select {
+		width: 100%;
+		padding: 0.55em 0.9em;
+		font: inherit;
+		color: var(--primary-text);
+		background: var(--accent);
+		border: 1px solid var(--accent-light);
+		border-radius: 8px;
+	}
+	.t-sort {
+		flex: 0 1 12rem;
+	}
+	.t-languages {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+		gap: 1em;
+	}
+	.t-loading {
+		grid-column: 1 / -1;
+		color: var(--muted);
+		padding: 1em 0;
+	}
+	.t-noscript {
+		color: var(--muted);
+	}
+	.t-lang {
+		display: flex;
+		flex-direction: column;
+		gap: 0.55em;
+		padding: 1.1em 1.2em;
+		background: var(--accent);
+		border: 1px solid var(--accent-light);
+		border-radius: var(--radius);
+	}
+	.t-lang-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.5em;
+	}
+	.t-lang-name {
+		font-weight: 700;
+		overflow-wrap: anywhere;
+	}
+	.t-lang-code {
+		color: var(--muted);
+		font-size: 0.85em;
+	}
+	.t-bar {
+		height: 0.5em;
+		background: var(--accent-light);
+		border-radius: 999px;
+		overflow: hidden;
+	}
+	.t-bar-fill {
+		display: block;
+		height: 100%;
+		background: var(--primary);
+		border-radius: 999px;
+	}
+	.t-lang-meta {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.5em;
+		font-size: 0.9em;
+		color: var(--muted);
+	}
+	.t-lang-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35em;
+		margin-top: 0.25em;
+	}
+	.t-lang-actions .button {
+		margin: 0;
+		font-size: 0.92em;
+		padding: 0.5em 1em;
+	}
+</style>
