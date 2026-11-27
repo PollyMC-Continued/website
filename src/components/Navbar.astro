@@ -10,12 +10,6 @@ const { active } = Astro.props;
 
 const items = [
     { id: "home", label: "Home", href: "/" },
-    {
-        id: "translations",
-        label: "Translation",
-        href: "/translation/",
-        mobileOnly: true,
-    },
     { id: "changelog", label: "Changelog", href: "/changelog/" },
     { id: "about", label: "About", href: "/about/" },
 ];
@@ -44,18 +38,10 @@ const items = [
                 </svg>
                 <span>PollyMC-Continued</span>
             </a>
-            <ul class="nav" id="mobile-menu">
+            <ul class="nav">
                 {
                     items.map((item) => (
-                        <li
-                            class:list={[
-                                "nav-item",
-                                {
-                                    "mobile-only": item.mobileOnly,
-                                    "is-current": active === item.id,
-                                },
-                            ]}
-                        >
+                        <li class="nav-item">
                             <a
                                 href={item.href}
                                 aria-current={
@@ -69,17 +55,6 @@ const items = [
                 }
             </ul>
         </div>
-        <button
-            class="menu-toggle"
-            type="button"
-            aria-expanded="false"
-            aria-controls="mobile-menu"
-            aria-label="Open menu"
-        >
-            <span class="bar"></span>
-            <span class="bar"></span>
-            <span class="bar"></span>
-        </button>
         <div class="links">
             <SocialLinks />
             <div>
@@ -106,40 +81,3 @@ const items = [
         display: block;
     }
 </style>
-
-<script>
-    const toggle = document.querySelector<HTMLButtonElement>(".menu-toggle");
-    const menu = document.getElementById("mobile-menu");
-
-    if (toggle && menu) {
-        const setOpen = (open: boolean) => {
-            toggle.setAttribute("aria-expanded", String(open));
-            toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
-            menu.classList.toggle("is-open", open);
-        };
-        const isOpen = () => toggle.getAttribute("aria-expanded") === "true";
-
-        toggle.addEventListener("click", () => setOpen(!isOpen()));
-
-        document.addEventListener("click", (e) => {
-            if (!isOpen()) return;
-            const target = e.target as Node;
-            if (!menu.contains(target) && !toggle.contains(target)) {
-                setOpen(false);
-            }
-        });
-
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape" && isOpen()) {
-                setOpen(false);
-                toggle.focus();
-            }
-        });
-
-        window
-            .matchMedia("(min-width: 60em)")
-            .addEventListener("change", (e) => {
-                if (e.matches) setOpen(false);
-            });
-    }
-</script>

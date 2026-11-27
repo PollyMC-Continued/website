@@ -687,6 +687,9 @@ import { site } from '../../../lib/site';
 	.va-pw-wrap input:focus {
 		outline: none;
 	}
+	.va-pw-wrap:focus-within {
+		border-color: var(--primary);
+	}
 	.va-pw-wrap.is-error,
 	.va-pw-wrap.is-error:focus-within {
 		border-color: #ff5c5c;
@@ -812,6 +815,7 @@ import { site } from '../../../lib/site';
 		border-color: #3f4839;
 	}
 	.va-item.is-selected .va-item-btn {
+		border-color: var(--primary);
 		background: #21271e;
 	}
 	.va-item-top,
