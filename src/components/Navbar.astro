@@ -1,6 +1,5 @@
 ---
 import SocialLinks from "./SocialLinks.astro";
-import { links } from "../lib/site";
 
 interface Props {
     active?: string;
@@ -14,71 +13,106 @@ const items = [
     { id: "translation", label: "Translation", href: "/translation/" },
     { id: "about", label: "About", href: "/about/" },
 ];
+
+const onDownloads = active === "downloads";
+const ctaHref = onDownloads ? "/" : "/downloads/";
+const ctaLabel = onDownloads ? "Home" : "Download";
 ---
 
-<header class="container">
-    <nav aria-label="Primary">
-        <div class="navbar">
-            <a class="logo" href="/" aria-label="PollyMC-Continued">
-                <svg
-                    viewBox="0 0 256 256"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    aria-hidden="true"
-                >
-                    <path d="M67 127.5V159H130V96H67V127.5Z" fill="black"
-                    ></path>
-                    <path
-                        d="M130 157.5V219H190.008V213.959H251V96H130V157.5Z"
-                        fill="#323232"></path>
-                    <path
-                        d="M5 128.5V222H67V96.6806H251V35H5V128.5Z"
-                        fill="#8ACA00"></path>
-                    <path d="M67 190.5V222H130V159H67V190.5Z" fill="#B0B08C"
-                    ></path>
-                </svg>
-                <span>PollyMC-Continued</span>
-            </a>
-            <ul class="nav">
-                {
-                    items.map((item) => (
-                        <li class="nav-item">
-                            <a
-                                href={item.href}
-                                aria-current={
-                                    active === item.id ? "page" : undefined
-                                }
-                            >
-                                {item.label}
-                            </a>
-                        </li>
-                    ))
-                }
-            </ul>
-        </div>
-        <div class="links">
+<header class="site-header container" data-open="false">
+    <nav class="site-nav" aria-label="Primary">
+        <a class="logo" href="/" aria-label="PollyMC-Continued">
+            <svg
+                viewBox="0 0 256 256"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+            >
+                <path d="M67 127.5V159H130V96H67V127.5Z" fill="black"></path>
+                <path
+                    d="M130 157.5V219H190.008V213.959H251V96H130V157.5Z"
+                    fill="#323232"></path>
+                <path
+                    d="M5 128.5V222H67V96.6806H251V35H5V128.5Z"
+                    fill="#8ACA00"></path>
+                <path d="M67 190.5V222H130V159H67V190.5Z" fill="#B0B08C"></path>
+            </svg>
+            <span>PollyMC-Continued</span>
+        </a>
+
+        <ul class="nav" id="site-menu">
+            {
+                items.map((item) => (
+                    <li class="nav-item">
+                        <a
+                            href={item.href}
+                            aria-current={active === item.id ? "page" : undefined}
+                        >
+                            {item.label}
+                        </a>
+                    </li>
+                ))
+            }
+            <li class="nav-item-extra">
+                <SocialLinks />
+                <a class="button" href={ctaHref}>{ctaLabel}</a>
+            </li>
+        </ul>
+
+        <div class="nav-actions">
             <SocialLinks />
-            <div>
-                {
-                    active === "downloads" ? (
-                        <a class="button" href="/">
-                            Home
-                        </a>
-                    ) : (
-                        <a class="button" href="/downloads/">
-                            Download
-                        </a>
-                    )
-                }
-            </div>
+            <a class="button" href={ctaHref}>{ctaLabel}</a>
         </div>
+
+        <button
+            class="nav-toggle"
+            type="button"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-controls="site-menu"
+        >
+            <span class="nav-toggle-bars" aria-hidden="true"></span>
+        </button>
     </nav>
 </header>
 
 <style>
     .logo svg {
-        height: 2.4em;
+        height: 2.2em;
         width: auto;
         display: block;
     }
 </style>
+
+<script>
+    const header = document.querySelector<HTMLElement>(".site-header");
+    const toggle = header?.querySelector<HTMLButtonElement>(".nav-toggle");
+
+    if (header && toggle) {
+        const setOpen = (open: boolean): void => {
+            header.dataset.open = String(open);
+            toggle.setAttribute("aria-expanded", String(open));
+            toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+        };
+        const isOpen = () => header.dataset.open === "true";
+
+        toggle.addEventListener("click", () => setOpen(!isOpen()));
+        header.querySelectorAll(".nav a").forEach((a) =>
+            a.addEventListener("click", () => setOpen(false)),
+        );
+        document.addEventListener("click", (e) => {
+            if (isOpen() && !header.contains(e.target as Node)) setOpen(false);
+        });
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && isOpen()) {
+                setOpen(false);
+                toggle.focus();
+            }
+        });
+        window
+            .matchMedia("(min-width: 56em)")
+            .addEventListener("change", (e) => {
+                if (e.matches) setOpen(false);
+            });
+    }
+</script>

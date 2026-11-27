@@ -10,7 +10,7 @@ const description =
 	title="Translations"
 	description={description}
 	canonical={`${site.url}/translation/`}
-	active="translations"
+	active="translation"
 >
 	<main id="main" class="container">
 		<div class="content">
@@ -41,6 +41,14 @@ const description =
 				<li class="t-loading" aria-hidden="true">Loading languages…</li>
 			</ul>
 
+			<div id="t-more-wrap" class="t-more" hidden>
+				<p id="t-count" class="t-count" role="status"></p>
+				<div class="t-more-buttons">
+					<button type="button" id="t-more" class="button secondary">Show more</button>
+					<button type="button" id="t-all" class="button secondary">Show all</button>
+				</div>
+			</div>
+
 			<noscript>
 				<p class="t-noscript">
 					The list of languages is loaded from an index file in your browser and needs JavaScript. Every language file can also be downloaded directly from the <a href="https://github.com/PollyMC-Continued/translations">translations repository</a>.
@@ -64,6 +72,9 @@ const description =
 			</p>
 		</div>
 	</main>
+	<button id="t-top" class="t-top" type="button" aria-label="Back to top" hidden>
+		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+	</button>
 </Layout>
 
 <script>
@@ -84,6 +95,15 @@ const description =
 	const filterRoot = document.querySelector<HTMLElement>('#t-filter');
 	const sortRoot = document.querySelector<HTMLElement>('#t-sort');
 
+	const moreWrap = document.querySelector<HTMLElement>('#t-more-wrap');
+	const moreBtn = document.querySelector<HTMLButtonElement>('#t-more');
+	const allBtn = document.querySelector<HTMLButtonElement>('#t-all');
+	const countEl2 = document.querySelector<HTMLElement>('#t-count');
+	const topBtn = document.querySelector<HTMLButtonElement>('#t-top');
+
+	const PAGE = 24;
+	let shown = PAGE;
+	let allEntries: [string, IndexEntry][] = [];
 	let currentFilter = 'all';
 	let currentSort = 'progress';
 
@@ -123,10 +143,10 @@ const description =
 				<span>${total.toLocaleString()} strings</span>
 			</div>
 			<div class="t-lang-actions">
-				<a class="button t-translate" href="/translation/editor/?lang=${encodeURIComponent(code)}">Translate</a>
-				<a class="button secondary t-download" href="/translation/sources/${encodeURIComponent(code)}.ts"
-					download="${escapeHtml(code)}.ts">Source (.ts)</a>
-				<a class="button secondary t-qm" href="/translation/${encodeURIComponent(e.file)}" download>Compiled (.qm)</a>
+				<a class="button t-translate" data-astro-prefetch="false" href="/translation/editor/?lang=${encodeURIComponent(code)}">Translate</a>
+				<a class="button secondary t-download" data-astro-prefetch="false" title="Download source file (.ts)" aria-label="Download ${escapeHtml(languageName(code))} source file (.ts)" href="/translation/sources/${encodeURIComponent(code)}.ts"
+					download="${escapeHtml(code)}.ts">.ts</a>
+				<a class="button secondary t-qm" data-astro-prefetch="false" title="Download compiled file (.qm)" aria-label="Download ${escapeHtml(languageName(code))} compiled file (.qm)" href="/translation/${encodeURIComponent(e.file)}" download>.qm</a>
 			</div>`;
 		return li;
 	}
@@ -153,9 +173,26 @@ const description =
 		});
 		if (rows.length === 0) {
 			list.innerHTML = '<li class="t-loading">No language matches that search.</li>';
+			if (moreWrap) moreWrap.hidden = true;
 			return;
 		}
-		for (const [code, e] of rows) list.append(row(code, e));
+		const frag = document.createDocumentFragment();
+		for (const [code, e] of rows.slice(0, shown)) frag.append(row(code, e));
+		list.append(frag);
+
+		if (moreWrap && countEl2) {
+			const left = rows.length - Math.min(shown, rows.length);
+			moreWrap.hidden = rows.length <= PAGE;
+			countEl2.textContent = `Showing ${Math.min(shown, rows.length)} of ${rows.length} languages`;
+			if (moreBtn) moreBtn.hidden = left === 0;
+			if (allBtn) allBtn.hidden = left === 0;
+			if (moreBtn) moreBtn.textContent = `Show ${Math.min(PAGE, left)} more`;
+		}
+	}
+
+	function rerender(): void {
+		shown = PAGE;
+		render(allEntries);
 	}
 
 	async function run(): Promise<void> {
@@ -165,6 +202,7 @@ const description =
 			if (!res.ok) throw new Error(`index -> ${res.status}`);
 			const data = (await res.json()) as { languages?: Record<string, IndexEntry> };
 			const entries = Object.entries(data.languages ?? {}).map(([code, e]) => [code, e] as [string, IndexEntry]);
+			allEntries = entries;
 			if (countEl && entries.length > 0) countEl.textContent = String(entries.length);
 
 			if (filterRoot) {
@@ -178,7 +216,7 @@ const description =
 					currentFilter,
 					(val) => {
 						currentFilter = val;
-						render(entries);
+						rerender();
 					}
 				);
 			}
@@ -195,17 +233,43 @@ const description =
 					currentSort,
 					(val) => {
 						currentSort = val;
-						render(entries);
+						rerender();
 					}
 				);
 			}
 
 			render(entries);
-			search?.addEventListener('input', () => render(entries));
+			search?.addEventListener('input', rerender);
+			moreBtn?.addEventListener('click', () => {
+				shown += PAGE;
+				render(allEntries);
+			});
+			allBtn?.addEventListener('click', () => {
+				shown = Number.MAX_SAFE_INTEGER;
+				render(allEntries);
+			});
 		} catch {
 			list.innerHTML = `<li class="t-loading">The language index could not be loaded. The
 				<a href="https://github.com/PollyMC-Continued/translations">translations repository</a> lists every language too.</li>`;
 		}
+	}
+
+	// Back-to-top button: appears once the visitor has scrolled a screen or so.
+	if (topBtn) {
+		let ticking = false;
+		window.addEventListener(
+			'scroll',
+			() => {
+				if (ticking) return;
+				ticking = true;
+				requestAnimationFrame(() => {
+					topBtn.hidden = window.scrollY < 700;
+					ticking = false;
+				});
+			},
+			{ passive: true }
+		);
+		topBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 	}
 
 	run();
@@ -252,8 +316,8 @@ const description =
 		margin: 0;
 		padding: 0;
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-		gap: 1em;
+		grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+		gap: 0.75em;
 	}
 	.t-loading {
 		grid-column: 1 / -1;
@@ -266,8 +330,8 @@ const description =
 	.t-lang {
 		display: flex;
 		flex-direction: column;
-		gap: 0.55em;
-		padding: 1.1em 1.2em;
+		gap: 0.4em;
+		padding: 0.85em 1em;
 		background: var(--accent);
 		border: 1px solid var(--accent-light);
 		border-radius: var(--radius);
@@ -307,13 +371,62 @@ const description =
 	}
 	.t-lang-actions {
 		display: flex;
-		flex-wrap: wrap;
+		align-items: center;
 		gap: 0.35em;
-		margin-top: 0.25em;
+		margin-top: 0.15em;
 	}
 	.t-lang-actions .button {
 		margin: 0;
-		font-size: 0.92em;
-		padding: 0.5em 1em;
+		font-size: 0.88em;
+		padding: 0.4em 0.9em;
+	}
+	.t-lang-actions .t-translate {
+		flex: 1;
+		text-align: center;
+	}
+	.t-more {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.6em;
+		margin: 1.5em 0 0.5em;
+	}
+	.t-more[hidden],
+	.t-top[hidden] {
+		display: none;
+	}
+	.t-count {
+		margin: 0;
+		color: var(--muted);
+		font-size: 0.9em;
+	}
+	.t-more-buttons {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.5em;
+	}
+	.t-more-buttons .button {
+		margin: 0;
+	}
+	.t-top {
+		position: fixed;
+		right: max(1rem, env(safe-area-inset-right));
+		bottom: max(1rem, env(safe-area-inset-bottom));
+		z-index: 40;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.9rem;
+		height: 2.9rem;
+		color: var(--page);
+		background: var(--primary);
+		border: 0;
+		border-radius: 50%;
+		cursor: pointer;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+	}
+	.t-top:hover {
+		background: var(--primary-dark);
 	}
 </style>

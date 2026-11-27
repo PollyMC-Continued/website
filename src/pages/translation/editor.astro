@@ -10,7 +10,7 @@ const description =
 	title="Translation editor"
 	description={description}
 	canonical={`${site.url}/translation/editor/`}
-	active="translations"
+	active="translation"
 	noindex
 >
 	<main id="main" class="container">
@@ -42,7 +42,19 @@ const description =
 				</div>
 			</div>
 
+			<div class="ed-pager hidden" data-pager>
+				<button type="button" class="button secondary" data-page-nav="prev">Previous</button>
+				<span class="ed-pager-label" data-pager-label></span>
+				<button type="button" class="button secondary" data-page-nav="next">Next</button>
+			</div>
+
 			<ol id="ed-strings" class="ed-strings"></ol>
+
+			<div class="ed-pager hidden" data-pager>
+				<button type="button" class="button secondary" data-page-nav="prev">Previous</button>
+				<span class="ed-pager-label" data-pager-label></span>
+				<button type="button" class="button secondary" data-page-nav="next">Next</button>
+			</div>
 
 			<div id="ed-submit" class="ed-submit hidden">
 				<h2>Your details</h2>
@@ -95,6 +107,10 @@ const description =
 	}
 
 	const MAX_BATCH = 60;
+	// Only this many strings are in the DOM at once. Rendering every string of a
+	// large language (3,000+ cards, each with auto-sizing textareas) froze and
+	// crashed the tab.
+	const PAGE_SIZE = 25;
 
 	// --------------------------------------------------------------- helpers
 	const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -182,6 +198,7 @@ const description =
 	let lang = '';
 	let messages: Message[] = [];
 	let filterMode = 'unfinished';
+	let page = 0;
 	let langSelectCtrl: CustomSelectController | null = null;
 	const draftKey = () => `pollymc:translation-draft:${lang}`;
 
@@ -221,6 +238,7 @@ const description =
 			return;
 		}
 		lang = code;
+		page = 0;
 		langSelectCtrl?.setValue(code, true);
 		$('ed-status').classList.remove('hidden');
 		$('ed-status').textContent = `Loading ${languageName(code)}…`;
@@ -316,13 +334,46 @@ const description =
 		const list = $('ed-strings');
 		list.textContent = '';
 		const rows = visible();
+		const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+		if (page >= pages) page = pages - 1;
+		if (page < 0) page = 0;
+
 		if (rows.length === 0) {
 			list.innerHTML = `<li class="ed-empty">Nothing matches the current filter.</li>`;
 		} else {
-			for (const m of rows) list.append(card(m));
-			document.querySelectorAll<HTMLTextAreaElement>('.ed-input').forEach(autoGrow);
+			const frag = document.createDocumentFragment();
+			const from = page * PAGE_SIZE;
+			for (const m of rows.slice(from, from + PAGE_SIZE)) frag.append(card(m));
+			list.append(frag);
+			autoGrowAll(list.querySelectorAll<HTMLTextAreaElement>('.ed-input'));
 		}
+		updatePagers(rows.length, pages);
 		updateStats();
+	}
+
+	function updatePagers(total: number, pages: number): void {
+		const from = total === 0 ? 0 : page * PAGE_SIZE + 1;
+		const to = Math.min(total, (page + 1) * PAGE_SIZE);
+		document.querySelectorAll<HTMLElement>('[data-pager]').forEach((el) => {
+			el.classList.toggle('hidden', pages <= 1);
+			const label = el.querySelector<HTMLElement>('[data-pager-label]');
+			if (label) label.textContent = `${from}–${to} of ${total} · page ${page + 1}/${pages}`;
+			const prev = el.querySelector<HTMLButtonElement>('[data-page-nav="prev"]');
+			const next = el.querySelector<HTMLButtonElement>('[data-page-nav="next"]');
+			if (prev) prev.disabled = page === 0;
+			if (next) next.disabled = page >= pages - 1;
+		});
+	}
+
+	function goToPage(delta: number): void {
+		page += delta;
+		showMessages();
+		$('ed-bar').scrollIntoView({ block: 'start' });
+	}
+
+	function resetToFirstPage(): void {
+		page = 0;
+		showMessages();
 	}
 
 	function updateStats(): void {
@@ -413,7 +464,25 @@ const description =
 		ta.style.height = `${ta.scrollHeight + 2}px`;
 	}
 
+	// Measure every textarea first, then resize them all: interleaving reads and
+	// writes forces a full layout per textarea.
+	function autoGrowAll(tas: Iterable<HTMLTextAreaElement>): void {
+		const all = [...tas];
+		for (const ta of all) ta.style.height = 'auto';
+		const heights = all.map((ta) => ta.scrollHeight + 2);
+		all.forEach((ta, i) => {
+			ta.style.height = `${heights[i]}px`;
+		});
+	}
+
+	let draftTimer: number | undefined;
 	function saveDraft(): void {
+		window.clearTimeout(draftTimer);
+		draftTimer = window.setTimeout(saveDraftNow, 400);
+	}
+
+	function saveDraftNow(): void {
+		window.clearTimeout(draftTimer);
 		if (!lang) return;
 		const edited: Suggestion[] = messages
 			.filter((m) => m.edited)
@@ -615,13 +684,25 @@ const description =
 		filterMode,
 		(val) => {
 			filterMode = val;
-			showMessages();
+			resetToFirstPage();
 		}
 	);
 
+	let searchTimer: number | undefined;
 	$('ed-strings').addEventListener('input', onInput);
 	$('ed-strings').addEventListener('click', onStringsClick);
-	$('ed-search').addEventListener('input', showMessages);
+	$('ed-search').addEventListener('input', () => {
+		window.clearTimeout(searchTimer);
+		searchTimer = window.setTimeout(resetToFirstPage, 200);
+	});
+	document.querySelectorAll<HTMLButtonElement>('[data-page-nav]').forEach((btn) =>
+		btn.addEventListener('click', () => goToPage(btn.dataset.pageNav === 'next' ? 1 : -1))
+	);
+	// Never lose a draft that is still waiting on the debounce timer.
+	window.addEventListener('pagehide', saveDraftNow);
+	document.addEventListener('visibilitychange', () => {
+		if (document.visibilityState === 'hidden') saveDraftNow();
+	});
 	$('ed-form').addEventListener('submit', submit);
 	initLanguageSwitcher();
 	loadLanguage();
@@ -701,6 +782,27 @@ const description =
 		display: flex;
 		flex-direction: column;
 		gap: 1em;
+	}
+	.ed-pager {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75em;
+		margin: 1em 0 0;
+	}
+	.ed-pager .button {
+		margin: 0;
+		font-size: 0.92em;
+		padding: 0.45em 1.1em;
+	}
+	.ed-pager .button:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+	.ed-pager-label {
+		color: var(--muted);
+		font-size: 0.9em;
+		text-align: center;
 	}
 	.ed-empty {
 		color: var(--muted);
