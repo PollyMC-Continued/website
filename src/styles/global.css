@@ -1071,7 +1071,8 @@ body.star-toast-open {
     min-width: 100%;
     max-height: 18rem;
     overflow-y: auto;
-    scrollbar-width: thin;
+    overscroll-behavior: contain;
+    scroll-padding-block: 0.35em;
     margin: 0;
     padding: 0.35em;
     list-style: none;
@@ -1081,6 +1082,34 @@ body.star-toast-open {
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
     z-index: 60;
     display: none;
+}
+.c-select-menu::-webkit-scrollbar {
+    width: 8px;
+}
+.c-select-menu::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: 0.35em;
+}
+.c-select-menu::-webkit-scrollbar-thumb {
+    background: var(--accent-light);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+.c-select-menu::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+.c-select-menu::-webkit-scrollbar-button {
+    display: none;
+    height: 0;
+}
+@supports not selector(::-webkit-scrollbar) {
+    .c-select-menu {
+        scrollbar-width: thin;
+        scrollbar-color: var(--accent-light) transparent;
+    }
 }
 .c-select[data-open="true"] .c-select-menu {
     display: block;
