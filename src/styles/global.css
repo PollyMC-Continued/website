@@ -643,7 +643,6 @@ body.star-toast-open {
 }
 .download-tab-active a {
     background-color: var(--background);
-    border-color: var(--primary);
     color: var(--primary-text);
 }
 .download-panel {
@@ -1047,7 +1046,6 @@ body.star-toast-open {
     background: #232820;
 }
 .c-select[data-open="true"] .c-select-trigger {
-    border-color: var(--primary);
     outline: 2px solid rgba(146, 214, 0, 0.2);
 }
 .c-select-label {
@@ -1232,7 +1230,6 @@ body.lb-open {
 }
 .lb-close:hover,
 .lb-nav:hover {
-    border-color: var(--primary);
     background: var(--accent);
     color: var(--primary);
 }
