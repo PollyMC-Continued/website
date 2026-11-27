@@ -1374,15 +1374,7 @@ body.lb-open {
         background: rgba(13, 15, 12, 0.72);
         z-index: 1;
     }
-    .lb-prev {
-        left: max(0.4rem, env(safe-area-inset-left));
-    }
-    .lb-next {
-        right: max(0.4rem, env(safe-area-inset-right));
-    }
-    .lb-close {
-        top: max(0.75rem, env(safe-area-inset-top));
-        right: max(0.75rem, env(safe-area-inset-right));
-        background: rgba(13, 15, 12, 0.72);
+    .lb-nav {
+        display: none;
     }
 }
