@@ -7,6 +7,9 @@ export function initScreenshotLightbox(selector = '.shot'): void {
 	let currentIndex = 0;
 	let lastTrigger: HTMLElement | null = null;
 	let touchStartX = 0;
+	let touchStartY = 0;
+	let touchIgnored = false;
+	let lockedScrollY = 0;
 
 	const overlay = document.createElement('div');
 	overlay.className = 'lb-overlay';
@@ -68,16 +71,33 @@ export function initScreenshotLightbox(selector = '.shot'): void {
 		render();
 		overlay.hidden = false;
 		requestAnimationFrame(() => overlay.classList.add('is-open'));
-		document.body.classList.add('lb-open');
-		closeBtn.focus();
+		lockScroll();
+		closeBtn.focus({ preventScroll: true });
 	}
 
 	function close(): void {
 		overlay.classList.remove('is-open');
-		document.body.classList.remove('lb-open');
 		overlay.hidden = true;
-		lastTrigger?.focus();
+		unlockScroll();
+		lastTrigger?.focus({ preventScroll: true });
 		lastTrigger = null;
+	}
+
+	// position:fixed on the body is the only reliable way to stop the page
+	// scrolling behind a modal on iOS; remember where we were and go back.
+	function lockScroll(): void {
+		lockedScrollY = window.scrollY;
+		document.body.style.top = `-${lockedScrollY}px`;
+		document.body.classList.add('lb-open');
+	}
+
+	function unlockScroll(): void {
+		document.body.classList.remove('lb-open');
+		document.body.style.top = '';
+		const root = document.documentElement;
+		root.style.scrollBehavior = 'auto'; // the page has smooth scrolling on: jump, don't animate
+		window.scrollTo(0, lockedScrollY);
+		root.style.scrollBehavior = '';
 	}
 
 	function step(delta: number): void {
@@ -118,18 +138,31 @@ export function initScreenshotLightbox(selector = '.shot'): void {
 	overlay.addEventListener(
 		'touchstart',
 		(e) => {
+			// a second finger means pinch-zoom, not a swipe
+			touchIgnored = e.touches.length > 1;
 			touchStartX = e.changedTouches[0]?.clientX ?? 0;
+			touchStartY = e.changedTouches[0]?.clientY ?? 0;
 		},
 		{ passive: true }
 	);
 	overlay.addEventListener(
 		'touchend',
 		(e) => {
+			if (e.touches.length > 0) touchIgnored = true;
+			if (touchIgnored) {
+				if (e.touches.length === 0) touchIgnored = false;
+				return;
+			}
 			const dx = (e.changedTouches[0]?.clientX ?? 0) - touchStartX;
-			if (Math.abs(dx) > 45) step(dx > 0 ? -1 : 1);
+			const dy = (e.changedTouches[0]?.clientY ?? 0) - touchStartY;
+			// only a mostly-horizontal swipe changes the image
+			if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx > 0 ? -1 : 1);
 		},
 		{ passive: true }
 	);
+	overlay.addEventListener('touchcancel', () => {
+		touchIgnored = false;
+	});
 
 	document.addEventListener('keydown', (e) => {
 		if (overlay.hidden) return;
