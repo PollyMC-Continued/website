@@ -305,7 +305,7 @@ import { site } from '../../../lib/site';
 					</div>
 					<div class="va-detail-actions">
 						<button type="button" id="va-copy-json" class="button secondary">Copy JSON</button>
-						<button type="button" id="va-accept-btn" class="button">Accept &amp; Download</button>
+						<button type="button" id="va-accept-btn" class="button">Accept</button>
 						<button type="button" id="va-reject-btn" class="button va-danger">Reject</button>
 					</div>
 				</div>
@@ -543,18 +543,23 @@ import { site } from '../../../lib/site';
 				if (!res.ok) {
 					showBanner((payload as { error?: string }).error || 'Failed to accept submission.');
 					btn.disabled = false;
-					btn.textContent = 'Accept & Download';
+					btn.textContent = 'Accept';
 					return;
 				}
-				downloadJson(`${currentDetail.lang}-${currentDetail.id}.json`, payload);
-				showBanner(`Accepted #${currentDetail.id} and downloaded JSON.`, true);
+				const pr = (payload as { _pr?: { branch: string; url: string } })._pr;
+				if (pr) {
+					showBanner(`Accepted #${currentDetail.id}: the PR is being opened automatically (${pr.branch}).`, true);
+				} else {
+					downloadJson(`${currentDetail.lang}-${currentDetail.id}.json`, payload);
+					showBanner(`Accepted #${currentDetail.id} and downloaded JSON.`, true);
+				}
 				selectedId = '';
 				currentDetail = null;
 				await fetchQueue(true);
 			} catch {
 				showBanner('Network error while accepting submission.');
 				btn.disabled = false;
-				btn.textContent = 'Accept & Download';
+				btn.textContent = 'Accept';
 			}
 			return;
 		}

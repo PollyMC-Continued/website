@@ -5,7 +5,9 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 // POST /api/translations-admin  —
 //   { action: 'login', secret, fingerprint? } -> set HttpOnly signed session cookie
 //   { action: 'logout' }                      -> clear session cookie
-//   { id?, reject?: false }                   -> accept (pop) submission and return LFJSON
+//   { id?, reject?: false }                   -> accept submission. With GITHUB_TRANSLATIONS_TOKEN it is pushed to the
+//                                                translations repo (a workflow opens the PR) and returned with `_pr`;
+//                                                without it, it is popped and returned as LFJSON
 //   { id, reject: true }                      -> reject and remove submission from queue
 //
 // Supports both Authorization: Bearer <TRANSLATION_BOT_SECRET> (for curl/CLI)
@@ -21,6 +23,66 @@ const SESSION_TTL_S = 12 * 60 * 60; // 12 hours
 const MAX_LIST = 200;
 const LOGIN_FAIL_LIMIT = 3;
 const LOGIN_FAIL_WINDOW_S = 30 * 60; // 30 minutes
+
+// --- GitHub hand-off (optional) ------------------------------------------------
+// When GITHUB_TRANSLATIONS_TOKEN is set, accepting a submission pushes it to the
+// translations repo as branch `submission/<lang>-<id>` containing
+// submissions/<lang>-<id>.json. The repo's "Apply website submission" workflow
+// then patches <lang>.ts, validates it and opens a pull request.
+// Token: fine-grained PAT limited to the translations repo, "Contents: write".
+const GH_TOKEN = process.env.GITHUB_TRANSLATIONS_TOKEN || '';
+const GH_REPO = process.env.GITHUB_TRANSLATIONS_REPO || 'PollyMC-Continued/translations';
+const GH_BASE = process.env.GITHUB_TRANSLATIONS_BASE || 'main';
+const GH_ON = Boolean(GH_TOKEN);
+
+async function gh(path, init = {}) {
+  const { allowStatus = [], ...fetchInit } = init;
+  const res = await fetch(`https://api.github.com/repos/${GH_REPO}${path}`, {
+    ...fetchInit,
+    headers: {
+      Authorization: `Bearer ${GH_TOKEN}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json',
+      'User-Agent': 'pollymc-website-translations',
+    },
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!res.ok && !allowStatus.includes(res.status)) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`GitHub ${fetchInit.method || 'GET'} ${path} -> ${res.status} ${text.slice(0, 200)}`);
+  }
+  return res;
+}
+
+async function queueForPullRequest(entry) {
+  if (!/^[A-Za-z0-9_@-]{1,30}$/.test(entry.lang) || !/^[a-z0-9-]{1,40}$/.test(entry.id)) {
+    throw new Error('Unsafe language code or id for a branch name.');
+  }
+  const branch = `submission/${entry.lang}-${entry.id}`;
+  const file = `submissions/${entry.lang}-${entry.id}.json`;
+
+  const base = await (await gh(`/git/ref/heads/${encodeURIComponent(GH_BASE)}`)).json();
+  await gh('/git/refs', {
+    method: 'POST',
+    body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: base.object.sha }),
+  });
+  try {
+    // A separate push event from the ref creation, so the workflow sees the file.
+    await gh(`/contents/${file}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        message: `Queue website submission ${entry.id} (${entry.lang})`,
+        content: Buffer.from(JSON.stringify(entry, null, 2), 'utf8').toString('base64'),
+        branch,
+      }),
+    });
+  } catch (err) {
+    await gh(`/git/refs/heads/${branch}`, { method: 'DELETE', allowStatus: [404, 422] }).catch(() => {});
+    throw err;
+  }
+  return { branch, url: `https://github.com/${GH_REPO}/tree/${branch}` };
+}
 
 async function redis(commands) {
   const res = await fetch(`${REDIS_URL}/pipeline`, {
@@ -342,9 +404,22 @@ export default async function handler(req, res) {
           }
         });
         if (!matchRaw) return res.status(404).json({ error: 'Submission not found in queue.' });
+        const entry = JSON.parse(matchRaw);
+
+        // Hand off to GitHub first: if it fails the submission stays in the queue.
+        let pr = null;
+        if (GH_ON) {
+          try {
+            pr = await queueForPullRequest(entry);
+          } catch (err) {
+            console.error(`GitHub hand-off failed: ${err.message}`);
+            return res.status(502).json({ error: 'Could not hand the submission to GitHub. It is still in the queue.' });
+          }
+        }
+
         const [removed] = await redis([['LREM', 'tr:queue', '1', matchRaw]]);
         if (!removed) return res.status(409).json({ error: 'Submission was already processed.' });
-        return res.status(200).json(JSON.parse(matchRaw));
+        return res.status(200).json(pr ? { ...entry, _pr: pr } : entry);
       }
 
       // Reject by id: locate exact serialized entry and remove it from the list.
