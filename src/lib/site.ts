@@ -22,7 +22,7 @@ export interface AssetPattern {
 }
 
 export interface Platform {
-	id: 'windows' | 'macos' | 'linux';
+	id: 'windows' | 'linux' | 'macos';
 	name: string;
 	screenshot?: ImageMetadata;
 	title: string;
@@ -42,17 +42,6 @@ export const platforms: Platform[] = [
 		],
 	},
 	{
-		id: 'macos',
-		name: 'macOS',
-		screenshot: macosImg,
-		title: 'macOS Download',
-		assets: [
-			{ match: '-macOS-arm64.dmg', label: 'Disk Image (.dmg)' },
-			{ match: '-macOS-arm64.zip', label: 'Archive (.zip)', secondary: true },
-		],
-		note: 'macOS is currently Apple Silicon / ARM64 only.',
-	},
-	{
 		id: 'linux',
 		name: 'Linux',
 		screenshot: linuxImg,
@@ -62,5 +51,16 @@ export const platforms: Platform[] = [
 			{ match: '-Linux-x86_64.deb', label: 'Debian Package (.deb)'},
 			{ match: '-Linux-x86_64.tar.gz', label: 'Tar Archive (.tar.gz)', secondary: true },
 		],
+	},
+	{
+		id: 'macos',
+		name: 'macOS',
+		screenshot: macosImg,
+		title: 'macOS Download',
+		assets: [
+			{ match: '-macOS-arm64.dmg', label: 'Disk Image (.dmg)' },
+			{ match: '-macOS-arm64.zip', label: 'Archive (.zip)', secondary: true },
+		],
+		note: 'macOS is currently Apple Silicon / ARM64 only.',
 	},
 ];
