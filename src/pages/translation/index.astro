@@ -3,7 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import { site } from '../../lib/site';
 
 const description =
-	'Help translate the PollyMC-Continued launcher into 92 languages: browse progress, download language files, or contribute translations without a GitHub account.';
+	'See how complete each PollyMC-Continued launcher translation is, browse every string, and download the language files.';
 ---
 
 <Layout
@@ -16,8 +16,15 @@ const description =
 		<div class="content">
 			<h1 class="sec-h">Translations</h1>
 			<p class="t-intro">
-				The launcher speaks <span id="t-lang-count">92</span> languages thanks to its community. The translation sources live in the <a href="https://github.com/PollyMC-Continued/translations">translations repository</a> this page shows how complete each language is and lets you contribute without a GitHub account.
+				The launcher speaks <span id="t-lang-count">92</span> languages thanks to its community. This page shows how complete each language is, and lets you browse the translation of every string.
 			</p>
+
+			<div class="infobox t-notice">
+				<p>
+					<strong>Contributing to translations is not available right now.</strong> If you really want to
+					help translate, head to the <a href="https://github.com/PollyMC-Continued/launcher">PollyMC-Continued launcher repository</a>.
+				</p>
+			</div>
 
 			<div class="t-toolbar" role="search">
 				<label class="t-search-wrap">
@@ -51,26 +58,11 @@ const description =
 
 			<noscript>
 				<p class="t-noscript">
-					The list of languages is loaded from an index file in your browser and needs JavaScript. Every language file can also be downloaded directly from the <a href="https://github.com/PollyMC-Continued/translations">translations repository</a>.
+					The list of languages is loaded from an index file in your browser and needs JavaScript. Every language file can also be found in the <a href="https://github.com/PollyMC-Continued/launcher">launcher repository</a>.
 				</p>
 			</noscript>
 		</div>
 
-		<div class="infobox">
-			<h1>How to contribute</h1>
-			<p>
-				Pick your language above and press <strong>Translate</strong>. The editor shows only the strings
-				that still need work, checks placeholders as you type, and saves a draft in your browser while
-				you work. Submitting asks for a name (required, used for credit) and an optional contact address
-				that is kept private and only used if a reviewer needs to ask about your change.
-			</p>
-			<p>
-				Submissions are queued for review by a maintainer and become <a href="https://github.com/PollyMC-Continued/translations/pulls">pull requests</a> nothing is written to the repository until a human has approved it, so there is no way to break anything. A GitHub account is never required.
-			</p>
-			<p>
-				If you prefer working with the files directly, read the <a href="https://raw.githubusercontent.com/PollyMC-Continued/translations/main/CONTRIBUTING.md">contributing guide</a> and open a normal pull request.
-			</p>
-		</div>
 	</main>
 	<button id="t-top" class="t-top" type="button" aria-label="Back to top" hidden>
 		<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
@@ -143,7 +135,7 @@ const description =
 				<span>${total.toLocaleString()} strings</span>
 			</div>
 			<div class="t-lang-actions">
-				<a class="button t-translate" data-astro-prefetch="false" href="/translation/editor/?lang=${encodeURIComponent(code)}">Translate</a>
+				<a class="button t-view" data-astro-prefetch="false" href="/translation/view/?lang=${encodeURIComponent(code)}">View strings</a>
 				<a class="button secondary t-download" data-astro-prefetch="false" title="Download source file (.ts)" aria-label="Download ${escapeHtml(languageName(code))} source file (.ts)" href="/translation/sources/${encodeURIComponent(code)}.ts"
 					download="${escapeHtml(code)}.ts">.ts</a>
 				<a class="button secondary t-qm" data-astro-prefetch="false" title="Download compiled file (.qm)" aria-label="Download ${escapeHtml(languageName(code))} compiled file (.qm)" href="/translation/${encodeURIComponent(e.file)}" download>.qm</a>
@@ -250,7 +242,7 @@ const description =
 			});
 		} catch {
 			list.innerHTML = `<li class="t-loading">The language index could not be loaded. The
-				<a href="https://github.com/PollyMC-Continued/translations">translations repository</a> lists every language too.</li>`;
+				<a href="https://github.com/PollyMC-Continued/launcher">launcher repository</a> lists every language too.</li>`;
 		}
 	}
 
@@ -281,6 +273,12 @@ const description =
 	   Class names are prefixed t- to stay collision-free. */
 	.t-intro {
 		color: var(--muted);
+	}
+	.t-notice {
+		margin: 1.25em 0 0;
+	}
+	.t-notice p {
+		margin: 0;
 	}
 	.t-toolbar {
 		display: flex;
@@ -379,7 +377,7 @@ const description =
 		font-size: 0.88em;
 		padding: 0.4em 0.9em;
 	}
-	.t-lang-actions .t-translate {
+	.t-lang-actions .t-view {
 		flex: 1;
 		text-align: center;
 	}

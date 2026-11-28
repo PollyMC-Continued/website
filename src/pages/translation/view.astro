@@ -1,0 +1,527 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { site } from '../../lib/site';
+
+const description =
+	'Browse every string of the PollyMC-Continued launcher and see how it is translated into each language.';
+---
+
+<Layout
+	title="Translation viewer"
+	description={description}
+	canonical={`${site.url}/translation/view/`}
+	active="translation"
+	noindex
+>
+	<main id="main" class="container">
+		<div class="content" id="viewer-root">
+			<div class="ed-head">
+				<div class="ed-title-wrap">
+					<h1 class="sec-h">Translations</h1>
+					<span id="ed-lang-label" class="visually-hidden">Language</span>
+					<div id="ed-lang-select" class="ed-lang-select" data-label-id="ed-lang-label"></div>
+				</div>
+				<a class="button secondary" href="/translation/">Back to languages</a>
+			</div>
+
+			<div class="infobox ed-notice">
+				<p>
+					<strong>Contributing translations is not available right now.</strong> This page is read-only.
+					If you really want to help translate, head to the
+					<a href="https://github.com/PollyMC-Continued/launcher">PollyMC-Continued launcher repository</a>.
+				</p>
+			</div>
+
+			<p id="ed-status" class="ed-status" role="status">Loading…</p>
+
+			<div id="ed-bar" class="ed-bar hidden">
+				<div class="ed-progress">
+					<span id="ed-progress-fill"></span>
+				</div>
+				<div class="ed-stats">
+					<span id="ed-stats-text"></span>
+				</div>
+				<div class="ed-filter">
+					<label>
+						<span class="visually-hidden">Search strings</span>
+						<input id="ed-search" type="search" placeholder="Search source, translation or context…" autocomplete="off" />
+					</label>
+					<span id="ed-mode-label" class="visually-hidden">Filter strings</span>
+					<div id="ed-mode" class="ed-mode-select" data-label-id="ed-mode-label"></div>
+				</div>
+			</div>
+
+			<div class="ed-pager hidden" data-pager>
+				<button type="button" class="button secondary" data-page-nav="prev">Previous</button>
+				<span class="ed-pager-label" data-pager-label></span>
+				<button type="button" class="button secondary" data-page-nav="next">Next</button>
+			</div>
+
+			<ol id="ed-strings" class="ed-strings"></ol>
+
+			<div class="ed-pager hidden" data-pager>
+				<button type="button" class="button secondary" data-page-nav="prev">Previous</button>
+				<span class="ed-pager-label" data-pager-label></span>
+				<button type="button" class="button secondary" data-page-nav="next">Next</button>
+			</div>
+		</div>
+	</main>
+</Layout>
+
+<script>
+	import { languageName, RTL_LANGUAGES } from '../../lib/languages';
+	import { initCustomSelect, type CustomSelectController } from '../../scripts/custom-select';
+
+	// ------------------------------------------------------------------ types
+	interface Message {
+		context: string;
+		source: string;
+		comment: string;
+		obsolete: boolean; // vanished or obsolete entries are not shown
+		unfinished: boolean;
+		numerus: boolean;
+		// one entry per plural form; singular strings have exactly one
+		texts: string[];
+	}
+
+	// Only this many strings are in the DOM at once. Rendering every string of a
+	// large language (3,000+ cards) froze the tab.
+	const PAGE_SIZE = 25;
+
+	// --------------------------------------------------------------- helpers
+	const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+
+	function escapeHtml(text: string): string {
+		return text
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;');
+	}
+
+	function isTranslated(m: Message): boolean {
+		return !m.unfinished && m.texts.some((t) => t.trim() !== '');
+	}
+
+	// ----------------------------------------------------------- .ts parsing
+	function parseTs(xml: string): Message[] {
+		const doc = new DOMParser().parseFromString(xml, 'application/xml');
+		if (doc.querySelector('parsererror')) throw new Error('The translation file is not valid XML.');
+		const out: Message[] = [];
+		doc.querySelectorAll('context').forEach((context) => {
+			const ctxName = context.querySelector('name')?.textContent ?? '';
+			context.querySelectorAll(':scope > message').forEach((message) => {
+				const tr = message.querySelector(':scope > translation');
+				if (!tr) return;
+				const state = tr.getAttribute('type') ?? '';
+				const obsolete = state === 'vanished' || state === 'obsolete';
+				if (obsolete) return;
+				const numerus = message.getAttribute('numerus') === 'yes';
+				const forms = [...tr.querySelectorAll(':scope > numerusform')];
+				const texts =
+					numerus && forms.length > 0 ? forms.map((f) => f.textContent ?? '') : [tr.textContent ?? ''];
+				out.push({
+					context: ctxName,
+					source: message.querySelector(':scope > source')?.textContent ?? '',
+					comment: message.querySelector(':scope > comment')?.textContent ?? '',
+					obsolete,
+					unfinished: state === 'unfinished' || state === 'fuzzy',
+					numerus,
+					texts,
+				});
+			});
+		});
+		return out;
+	}
+
+	// ------------------------------------------------------------ UI wiring
+	let lang = '';
+	let messages: Message[] = [];
+	let filterMode = 'all';
+	let page = 0;
+	let langSelectCtrl: CustomSelectController | null = null;
+
+	async function initLanguageSwitcher(): Promise<void> {
+		const root = $('ed-lang-select');
+		try {
+			const res = await fetch('/translation/index_v2.json');
+			if (!res.ok) return;
+			const data = (await res.json()) as { languages?: Record<string, unknown> };
+			const codes = Object.keys(data.languages ?? {}).sort((a, b) =>
+				languageName(a).localeCompare(languageName(b))
+			);
+			const opts = codes.map((c) => ({ value: c, label: `${languageName(c)} (${c})` }));
+			const initial = codes.includes(lang) ? lang : '';
+			if (!initial) opts.unshift({ value: '', label: 'Select a language…' });
+			langSelectCtrl = initCustomSelect(root, opts, initial, (nextLang) => {
+				if (!nextLang || nextLang === lang) return;
+				const url = new URL(location.href);
+				url.searchParams.set('lang', nextLang);
+				history.replaceState(null, '', url.toString());
+				loadLanguage(nextLang);
+			});
+		} catch {
+			// non-fatal: page still works with ?lang=
+		}
+	}
+
+	async function loadLanguage(explicitCode?: string): Promise<void> {
+		const code = explicitCode ?? (new URLSearchParams(location.search).get('lang') ?? '');
+		if (!/^[\w@.-]{1,30}$/.test(code)) {
+			$('ed-status').classList.remove('hidden');
+			$('ed-bar').classList.add('hidden');
+			$('ed-strings').textContent = '';
+			$('ed-status').textContent =
+				'No language selected. Pick a language from the dropdown above or go back to the language list.';
+			return;
+		}
+		lang = code;
+		page = 0;
+		langSelectCtrl?.setValue(code, true);
+		$('ed-status').classList.remove('hidden');
+		$('ed-status').textContent = `Loading ${languageName(code)}…`;
+		$('ed-bar').classList.add('hidden');
+		$('ed-strings').textContent = '';
+
+		// Drafts from the old editor are no longer used; clean them up.
+		try {
+			localStorage.removeItem(`pollymc:translation-draft:${code}`);
+		} catch {
+			// storage unavailable: nothing to clean up
+		}
+
+		try {
+			const res = await fetch(`/translation/sources/${encodeURIComponent(code)}.ts`);
+			if (!res.ok) throw new Error(`file -> ${res.status}`);
+			messages = parseTs(await res.text());
+			showMessages();
+			$('ed-status').classList.add('hidden');
+			$('ed-bar').classList.remove('hidden');
+		} catch {
+			$('ed-status').textContent =
+				'That language could not be loaded. Go back to the list of languages and try again.';
+		}
+	}
+
+	function visible(): Message[] {
+		const q = ($('ed-search') as HTMLInputElement).value.trim().toLowerCase();
+		return messages.filter((m) => {
+			const done = isTranslated(m);
+			if (filterMode === 'translated' && !done) return false;
+			if (filterMode === 'untranslated' && done) return false;
+			if (q && !`${m.source} ${m.texts.join(' ')} ${m.context} ${m.comment}`.toLowerCase().includes(q)) {
+				return false;
+			}
+			return true;
+		});
+	}
+
+	function card(m: Message): HTMLLIElement {
+		const li = document.createElement('li');
+		li.className = 'ed-string';
+		const rtl = RTL_LANGUAGES.has(lang) ? ' dir="rtl"' : '';
+		const done = isTranslated(m);
+
+		const forms = m.texts
+			.map((t, i) => {
+				const label = m.numerus ? `Plural form ${i + 1}` : 'Translation';
+				const body = t.trim()
+					? escapeHtml(t)
+					: '<em class="ed-missing">Not translated yet</em>';
+				return `
+					<div class="ed-form-row">
+						<span class="ed-form-label">${label}</span>
+						<div class="ed-translation" dir="auto"${rtl}>${body}</div>
+					</div>`;
+			})
+			.join('');
+
+		li.innerHTML = `
+			<div class="ed-src-head">
+				<code class="ed-context">${escapeHtml(m.context)}</code>
+				<span class="ed-badge ${done ? 'is-done' : 'is-todo'}">${done ? 'Translated' : 'Untranslated'}</span>
+			</div>
+			<div class="ed-source" dir="auto">${escapeHtml(m.source) || '<em>(empty source)</em>'}</div>
+			${m.comment ? `<div class="ed-comment" dir="auto">${escapeHtml(m.comment)}</div>` : ''}
+			<div class="ed-forms">${forms}</div>`;
+		return li;
+	}
+
+	function showMessages(): void {
+		const list = $('ed-strings');
+		list.textContent = '';
+		const rows = visible();
+		const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+		if (page >= pages) page = pages - 1;
+		if (page < 0) page = 0;
+
+		if (rows.length === 0) {
+			list.innerHTML = `<li class="ed-empty">Nothing matches the current filter.</li>`;
+		} else {
+			const frag = document.createDocumentFragment();
+			const from = page * PAGE_SIZE;
+			for (const m of rows.slice(from, from + PAGE_SIZE)) frag.append(card(m));
+			list.append(frag);
+		}
+		updatePagers(rows.length, pages);
+		updateStats();
+	}
+
+	function updatePagers(total: number, pages: number): void {
+		const from = total === 0 ? 0 : page * PAGE_SIZE + 1;
+		const to = Math.min(total, (page + 1) * PAGE_SIZE);
+		document.querySelectorAll<HTMLElement>('[data-pager]').forEach((el) => {
+			el.classList.toggle('hidden', pages <= 1);
+			const label = el.querySelector<HTMLElement>('[data-pager-label]');
+			if (label) label.textContent = `${from}–${to} of ${total} · page ${page + 1}/${pages}`;
+			const prev = el.querySelector<HTMLButtonElement>('[data-page-nav="prev"]');
+			const next = el.querySelector<HTMLButtonElement>('[data-page-nav="next"]');
+			if (prev) prev.disabled = page === 0;
+			if (next) next.disabled = page >= pages - 1;
+		});
+	}
+
+	function goToPage(delta: number): void {
+		page += delta;
+		showMessages();
+		$('ed-bar').scrollIntoView({ block: 'start' });
+	}
+
+	function resetToFirstPage(): void {
+		page = 0;
+		showMessages();
+	}
+
+	function updateStats(): void {
+		const total = messages.length;
+		const translated = messages.filter(isTranslated).length;
+		const pct = total > 0 ? Math.round((translated / total) * 100) : 0;
+		$('ed-stats-text').textContent =
+			`${pct}% translated · ${translated.toLocaleString()} of ${total.toLocaleString()} strings`;
+		($('ed-progress-fill') as HTMLElement).style.width = `${pct}%`;
+	}
+
+	// ------------------------------------------------------------------ boot
+	initCustomSelect(
+		$('ed-mode'),
+		[
+			{ value: 'all', label: 'All strings' },
+			{ value: 'translated', label: 'Translated' },
+			{ value: 'untranslated', label: 'Untranslated' },
+		],
+		filterMode,
+		(val) => {
+			filterMode = val;
+			resetToFirstPage();
+		}
+	);
+
+	let searchTimer: number | undefined;
+	$('ed-search').addEventListener('input', () => {
+		window.clearTimeout(searchTimer);
+		searchTimer = window.setTimeout(resetToFirstPage, 200);
+	});
+	document.querySelectorAll<HTMLButtonElement>('[data-page-nav]').forEach((btn) =>
+		btn.addEventListener('click', () => goToPage(btn.dataset.pageNav === 'next' ? 1 : -1))
+	);
+	initLanguageSwitcher();
+	loadLanguage();
+</script>
+
+<style is:global>
+	.ed-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75em;
+	}
+	.ed-title-wrap {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.75em 1em;
+	}
+	.ed-lang-select {
+		min-width: 15rem;
+	}
+	.ed-notice {
+		margin: 1.25em 0 0;
+	}
+	.ed-notice p {
+		margin: 0;
+	}
+	.ed-status {
+		color: var(--muted);
+	}
+	.ed-bar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75em 1.25em;
+		align-items: center;
+		margin: 1.25em 0 0.5em;
+	}
+	.ed-progress {
+		flex: 0 1 10rem;
+		height: 0.5em;
+		width: 100%;
+		max-width: 14rem;
+		background: var(--accent-light);
+		border-radius: 999px;
+		overflow: hidden;
+	}
+	.ed-progress span {
+		display: block;
+		height: 100%;
+		width: 0;
+		background: var(--primary);
+		border-radius: 999px;
+		transition: width 200ms ease;
+	}
+	.ed-stats {
+		color: var(--muted);
+		font-size: 0.9em;
+	}
+	.ed-filter {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5em 0.75em;
+		align-items: center;
+		margin-left: auto;
+	}
+	.ed-filter input[type='search'] {
+		padding: 0.55em 0.9em;
+		font: inherit;
+		color: var(--primary-text);
+		background: var(--accent);
+		border: 1px solid var(--accent-light);
+		border-radius: 8px;
+		width: 100%;
+	}
+	.ed-mode-select {
+		min-width: 12.5rem;
+	}
+	.ed-strings {
+		list-style: none;
+		margin: 1em 0 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1em;
+	}
+	.ed-pager {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75em;
+		margin: 1em 0 0;
+	}
+	.ed-pager .button {
+		margin: 0;
+		font-size: 0.92em;
+		padding: 0.45em 1.1em;
+	}
+	.ed-pager .button:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+	.ed-pager-label {
+		color: var(--muted);
+		font-size: 0.9em;
+		text-align: center;
+	}
+	.ed-empty {
+		color: var(--muted);
+		padding: 1.25em;
+		background: var(--accent);
+		border: 1px dashed var(--accent-light);
+		border-radius: var(--radius);
+		text-align: center;
+	}
+	.ed-string {
+		padding: 1.1em 1.25em;
+		background: var(--accent);
+		border: 1px solid var(--accent-light);
+		border-radius: var(--radius);
+		display: flex;
+		flex-direction: column;
+		gap: 0.5em;
+	}
+	.ed-src-head {
+		display: flex;
+		gap: 0.75em;
+		align-items: center;
+		justify-content: space-between;
+	}
+	.ed-context {
+		color: var(--primary);
+		font-size: 0.8em;
+		overflow-wrap: anywhere;
+	}
+	.ed-badge {
+		flex: none;
+		font-size: 0.75em;
+		font-weight: 600;
+		padding: 0.15em 0.6em;
+		border-radius: 999px;
+		border: 1px solid var(--accent-light);
+		color: var(--muted);
+	}
+	.ed-badge.is-done {
+		color: var(--primary);
+		border-color: rgba(146, 214, 0, 0.45);
+	}
+	.ed-source {
+		font-weight: 600;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		color: var(--primary-text);
+		max-height: 9.5rem;
+		overflow-y: auto;
+		scrollbar-width: thin;
+	}
+	.ed-comment {
+		color: var(--muted);
+		font-size: 0.88em;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+	.ed-forms {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5em;
+	}
+	.ed-form-row {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25em;
+		width: 100%;
+	}
+	.ed-form-label {
+		font-size: 0.8em;
+		color: var(--muted);
+		font-weight: 600;
+	}
+	.ed-translation {
+		padding: 0.55em 0.8em;
+		line-height: 1.5;
+		color: var(--primary-text);
+		background: var(--page);
+		border: 1px solid var(--accent-light);
+		border-radius: 8px;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		min-height: 2.4em;
+		max-height: 12rem;
+		overflow-y: auto;
+		scrollbar-width: thin;
+		user-select: text;
+	}
+	.ed-missing {
+		color: var(--muted);
+	}
+	.hidden {
+		display: none !important;
+	}
+</style>

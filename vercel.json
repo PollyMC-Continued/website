@@ -4,5 +4,17 @@
       "source": "/discord",
       "destination": "https://discord.gg/FsM3JNTN9z"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/translation/editor",
+      "destination": "/translation/view",
+      "permanent": true
+    },
+    {
+      "source": "/translation/vault",
+      "destination": "/translation",
+      "permanent": true
+    }
   ]
 }
