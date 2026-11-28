@@ -19,12 +19,10 @@ const description =
 				The launcher speaks <span id="t-lang-count">92</span> languages thanks to its community. This page shows how complete each language is, and lets you browse the translation of every string.
 			</p>
 
-			<div class="infobox t-notice">
-				<p>
-					<strong>Contributing to translations is not available right now.</strong> If you really want to
-					help translate, head to the <a href="https://github.com/PollyMC-Continued/launcher">PollyMC-Continued launcher repository</a>.
-				</p>
-			</div>
+			<p class="t-notice">
+				<strong>Contributing to translations is not available right now.</strong> If you really want to
+				help translate, head to the <a href="https://github.com/PollyMC-Continued/launcher">PollyMC-Continued launcher repository</a>.
+			</p>
 
 			<div class="t-toolbar" role="search">
 				<label class="t-search-wrap">
@@ -275,10 +273,12 @@ const description =
 		color: var(--muted);
 	}
 	.t-notice {
-		margin: 1.25em 0 0;
+		margin: 0.75em 0 0;
+		color: var(--muted);
+		font-size: 0.9em;
 	}
-	.t-notice p {
-		margin: 0;
+	.t-notice strong {
+		color: var(--primary-text);
 	}
 	.t-toolbar {
 		display: flex;

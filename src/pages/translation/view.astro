@@ -24,13 +24,10 @@ const description =
 				<a class="button secondary" href="/translation/">Back to languages</a>
 			</div>
 
-			<div class="infobox ed-notice">
-				<p>
-					<strong>Contributing translations is not available right now.</strong> This page is read-only.
-					If you really want to help translate, head to the
-					<a href="https://github.com/PollyMC-Continued/launcher">PollyMC-Continued launcher repository</a>.
-				</p>
-			</div>
+			<p class="ed-notice">
+				<strong>Contributing to translations is not available right now.</strong> This page is read-only. If you
+				really want to help translate, head to the <a href="https://github.com/PollyMC-Continued/launcher">PollyMC-Continued launcher repository</a>.
+			</p>
 
 			<p id="ed-status" class="ed-status" role="status">Loading…</p>
 
@@ -347,10 +344,12 @@ const description =
 		min-width: 15rem;
 	}
 	.ed-notice {
-		margin: 1.25em 0 0;
+		margin: 0.75em 0 0;
+		color: var(--muted);
+		font-size: 0.9em;
 	}
-	.ed-notice p {
-		margin: 0;
+	.ed-notice strong {
+		color: var(--primary-text);
 	}
 	.ed-status {
 		color: var(--muted);
