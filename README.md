@@ -69,6 +69,8 @@ public/translation/
 └── sources/<lang>.ts # Qt Linguist sources for web translation tools
 ```
 
+Two bulk URLs download everything at once. `/translation/sources/*.ts` returns a zip of every `.ts` source, and `/translation/sources/*.qm` (or `/translation/*.qm`) returns a zip of every compiled `.qm`. `scripts/translation-zips.mjs` builds those zips after `astro build`, and `vercel.json` rewrites the wildcard URLs to them.
+
 Want to fix or add a translation? Change the `.ts` file in the launcher repo, never here.
 
 ## Contributing

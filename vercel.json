@@ -3,6 +3,22 @@
     {
       "source": "/discord",
       "destination": "https://discord.gg/FsM3JNTN9z"
+    },
+    {
+      "source": "/translation/sources/:glob(\\*|%2A).ts",
+      "destination": "/translation/pollymc-translations-ts.zip"
+    },
+    {
+      "source": "/translation/sources/:glob(\\*|%2A).qm",
+      "destination": "/translation/pollymc-translations-qm.zip"
+    },
+    {
+      "source": "/translation/:glob(\\*|%2A).qm",
+      "destination": "/translation/pollymc-translations-qm.zip"
+    },
+    {
+      "source": "/translation/:glob(\\*|%2A).ts",
+      "destination": "/translation/pollymc-translations-ts.zip"
     }
   ],
   "redirects": [
@@ -15,6 +31,26 @@
       "source": "/translation/vault",
       "destination": "/translation",
       "permanent": true
+    }
+  ],
+  "headers": [
+    {
+      "source": "/translation/pollymc-translations-ts.zip",
+      "headers": [
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"pollymc-translations-ts.zip\""
+        }
+      ]
+    },
+    {
+      "source": "/translation/pollymc-translations-qm.zip",
+      "headers": [
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=\"pollymc-translations-qm.zip\""
+        }
+      ]
     }
   ]
 }
